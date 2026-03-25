@@ -28,6 +28,25 @@ class AnthropicProvider(BaseProvider):
             return f"{self.base_url}/messages"
         return f"{self.base_url}/v1/messages"
 
+    @staticmethod
+    def _json_payload(response: requests.Response) -> dict:
+        content_type = (response.headers.get("content-type") or "").lower()
+        if "text/event-stream" not in content_type:
+            return response.json()
+
+        chunks: list[str] = []
+        for raw_line in response.text.splitlines():
+            line = raw_line.strip()
+            if not line or not line.startswith("data:"):
+                continue
+            data = line[5:].strip()
+            if not data or data == "[DONE]":
+                continue
+            chunks.append(data)
+        if not chunks:
+            raise ValueError("Empty event-stream response body.")
+        return requests.models.complexjson.loads(chunks[-1])
+
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         if self.compat_mode == "openai":
             return self._generate_openai_compat(request)
@@ -54,7 +73,7 @@ class AnthropicProvider(BaseProvider):
             },
         )
         response.raise_for_status()
-        payload = response.json()
+        payload = self._json_payload(response)
         latency = time.perf_counter() - started
         content = payload.get("content", [])
         if isinstance(content, str):
@@ -117,7 +136,7 @@ class AnthropicProvider(BaseProvider):
             },
         )
         response.raise_for_status()
-        payload = response.json()
+        payload = self._json_payload(response)
         latency = time.perf_counter() - started
         choices = payload.get("choices", [])
         message = choices[0].get("message", {}) if choices else {}
