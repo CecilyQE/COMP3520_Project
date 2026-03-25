@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from coordbench.models import GenerationRequest, GenerationResponse
+from coordbench.response_validation import response_validation_error
 from coordbench.utils.files import ensure_dir, read_json, write_json
 
 
@@ -27,6 +28,12 @@ def load_cached_response(
     if not path.exists():
         return None
     payload = dict(read_json(path))
+    if response_validation_error(
+        text=str(payload.get("text", "")),
+        finish_reason=payload.get("finish_reason"),
+        error=payload.get("error"),
+    ):
+        return None
     payload["cache_hit"] = True
     return GenerationResponse(**payload)
 

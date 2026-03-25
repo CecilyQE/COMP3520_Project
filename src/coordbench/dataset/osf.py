@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -12,6 +12,7 @@ from coordbench.paths import source_root
 from coordbench.utils.files import ensure_dir, sha256sum, write_json
 
 LOGGER = logging.getLogger(__name__)
+UTC = getattr(__import__("datetime"), "UTC", timezone.utc)
 
 OSF_ASSETS = [
     SourceAsset("datasets", "Study1.csv", "https://osf.io/download/nb52s/"),

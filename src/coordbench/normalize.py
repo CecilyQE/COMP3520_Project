@@ -8,6 +8,7 @@ import pandas as pd
 from rapidfuzz import fuzz, process
 
 from coordbench.config import load_config
+from coordbench.response_validation import response_validation_error
 from coordbench.run_state import dedupe_request_records, prepared_snapshot_dir_for_run, resolve_run_dir
 from coordbench.utils.files import read_json, read_jsonl, write_json
 from coordbench.utils.text import clean_surface, extract_first_answer_line, make_match_key
@@ -38,6 +39,14 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
         LOGGER.info("Deduped raw generations for %s from %s rows to %s rows", run_dir, len(raw_rows), len(deduped_rows))
 
     frame = pd.DataFrame(deduped_rows)
+    frame["response_validation_error"] = frame.apply(
+        lambda row: response_validation_error(
+            text=str(row.get("response_text") or ""),
+            finish_reason=row.get("finish_reason"),
+            error=row.get("error"),
+        ),
+        axis=1,
+    )
     frame["parsed_answer"] = frame["response_text"].astype(str).map(extract_first_answer_line)
     frame["response_clean"] = frame["parsed_answer"].map(clean_surface)
     frame["answer_key"] = frame["response_clean"].map(make_match_key)
@@ -61,8 +70,9 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
         answer_key = row["answer_key"]
         canonical_answer = ""
         status = "invalid"
+        validation_error = row.get("response_validation_error")
 
-        if answer_key:
+        if not validation_error and answer_key:
             alias_matches = aliases[
                 ((aliases["panel_id"].fillna("") == panel_id) | (aliases["panel_id"].fillna("") == ""))
                 & ((aliases["item_id"].fillna("") == item_id) | (aliases["item_id"].fillna("") == ""))

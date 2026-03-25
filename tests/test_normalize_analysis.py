@@ -78,7 +78,7 @@ def _write_prepared_snapshot(snapshot_dir: Path, *, london_label: str, paris_lab
                 "item_id": "study2_item_01",
                 "item_number": 1,
                 "item_text_en": "Name a city",
-                "item_text_zh": "说出一座城市",
+                "item_text_zh": "city zh",
             }
         ]
     ).to_csv(snapshot_dir / "panel_items.csv", index=False)
@@ -102,7 +102,7 @@ def _raw_row(
         "panel_id": "study2_british_within",
         "item_id": "study2_item_01",
         "item_text_en": "Name a city",
-        "item_text_zh": "说出一座城市",
+        "item_text_zh": "city zh",
         "prompt_language": prompt_language,
         "answer_language": "English",
         "round_index": 1,
@@ -224,3 +224,48 @@ def test_analyze_run_handles_empty_analyzable_data(tmp_path: Path, monkeypatch):
     assert round2_candidates.empty
     manifest = json.loads((run_dir / "run_manifest.json").read_text(encoding="utf-8"))
     assert "analysis_warning" in manifest
+
+
+def test_normalize_marks_service_errors_and_truncated_reasoning_invalid(tmp_path: Path, monkeypatch):
+    prepared_root = tmp_path / "prepared"
+    snapshot = prepared_root / "snapshot"
+    _write_prepared_snapshot(snapshot, london_label="old_london", paris_label="old_paris")
+    config_path = _write_config(tmp_path, round1_samples=2)
+
+    run_dir = tmp_path / "runs" / "invalidrun"
+    run_dir.mkdir(parents=True)
+    (run_dir / "run_manifest.json").write_text(
+        json.dumps({"run_id": "invalidrun", "prepared_snapshot_id": "snapshot", "panel_id": "study2_british_within"}),
+        encoding="utf-8",
+    )
+    raw_rows = [
+        _raw_row(
+            prompt_language="en",
+            sample_index=0,
+            response_text="Thinking Process:\n\n1. Analyze the request.",
+            request_cache_key="en-0",
+        ),
+        _raw_row(
+            prompt_language="en",
+            sample_index=1,
+            response_text="\u6a21\u578b\u300cQwen\u300d\u7684\u8bf7\u6c42\u8d1f\u8f7d\u8fc7\u9ad8\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002",
+            request_cache_key="en-1",
+        ),
+        _raw_row(prompt_language="zh", sample_index=0, response_text="London", request_cache_key="zh-0"),
+        _raw_row(prompt_language="zh", sample_index=1, response_text="London", request_cache_key="zh-1"),
+    ]
+    with (run_dir / "raw_generations.jsonl").open("w", encoding="utf-8") as handle:
+        for row in raw_rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    monkeypatch.setattr("coordbench.run_state.prepared_root", lambda: prepared_root)
+
+    normalize_run(config_path, run_dir)
+    normalized = pd.read_csv(run_dir / "normalized_outputs.csv")
+
+    invalid_rows = normalized[normalized["prompt_language"] == "en"].reset_index(drop=True)
+    assert invalid_rows["normalization_status"].tolist() == ["invalid", "invalid"]
+    assert invalid_rows["canonical_answer"].fillna("").tolist() == ["", ""]
+
+    valid_rows = normalized[normalized["prompt_language"] == "zh"].reset_index(drop=True)
+    assert valid_rows["canonical_answer"].tolist() == ["old_london", "old_london"]

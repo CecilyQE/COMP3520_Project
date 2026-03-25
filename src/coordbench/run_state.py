@@ -8,6 +8,7 @@ from coordbench.cache import cache_key_for_request
 from coordbench.dataset.profile import latest_prepared_snapshot
 from coordbench.models import GenerationRequest
 from coordbench.paths import prepared_root
+from coordbench.response_validation import response_validation_error
 from coordbench.utils.files import read_json, read_jsonl
 
 LOGGER = logging.getLogger(__name__)
@@ -83,7 +84,11 @@ def request_fallback_identity_from_request(request: GenerationRequest) -> str:
 
 
 def record_is_complete(record: dict[str, Any]) -> bool:
-    return str(record.get("error") or "").strip() == ""
+    return response_validation_error(
+        text=str(record.get("response_text") or record.get("text") or ""),
+        finish_reason=record.get("finish_reason"),
+        error=record.get("error"),
+    ) is None
 
 
 def completed_request_ids(raw_path: Path) -> set[str]:

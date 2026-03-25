@@ -4,7 +4,7 @@ import logging
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +14,7 @@ from coordbench.cache import cache_key_for_request, load_cached_response, save_c
 from coordbench.config import load_config
 from coordbench.models import BenchmarkConfig, GenerationRequest
 from coordbench.prompts import build_prompt_messages
+from coordbench.response_validation import response_validation_error
 from coordbench.run_state import (
     completed_request_ids,
     load_run_manifest,
@@ -25,6 +26,7 @@ from coordbench.run_state import (
 from coordbench.utils.files import append_jsonl, ensure_dir, read_json, write_json
 
 LOGGER = logging.getLogger(__name__)
+UTC = getattr(__import__("datetime"), "UTC", timezone.utc)
 
 
 def _provider_instance(provider_name: str, config: BenchmarkConfig):
@@ -262,6 +264,13 @@ def run_sampling(
             for attempt in range(provider_config.max_retries):
                 try:
                     response = provider.generate(single_request)
+                    validation_error = response_validation_error(
+                        text=response.text,
+                        finish_reason=response.finish_reason,
+                        error=response.error,
+                    )
+                    if validation_error:
+                        raise RuntimeError(validation_error)
                     save_cached_response(config.outputs.cache_root, single_request, response)
                     return {
                         "request": single_request,

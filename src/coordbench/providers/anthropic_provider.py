@@ -30,7 +30,8 @@ class AnthropicProvider(BaseProvider):
 
     @staticmethod
     def _json_payload(response: requests.Response) -> dict:
-        content_type = (response.headers.get("content-type") or "").lower()
+        headers = getattr(response, "headers", {}) or {}
+        content_type = (headers.get("content-type") or "").lower()
         if "text/event-stream" not in content_type:
             return response.json()
 

@@ -37,16 +37,40 @@ def prettify_prompt(value: str) -> str:
     return value[0].upper() + value[1:]
 
 
+def _looks_like_reasoning_header(value: str) -> bool:
+    lowered = clean_surface(value).lower()
+    return lowered.startswith(
+        (
+            "thinking process",
+            "reasoning",
+            "analysis",
+            "<think>",
+            "**thinking process",
+            "**reasoning",
+        )
+    )
+
+
 def extract_first_answer_line(value: str) -> str:
-    lines = [clean_surface(line) for line in value.splitlines()]
+    candidate = value
+    think_segments = re.split(r"</think>", candidate, flags=re.IGNORECASE)
+    if len(think_segments) > 1:
+        candidate = think_segments[-1]
+
+    lines = [clean_surface(line) for line in candidate.splitlines()]
     lines = [line for line in lines if line]
     if not lines:
         return ""
+
+    for line in lines:
+        lowered = line.lower()
+        for prefix in ("answer:", "final answer:", "response:", "\u7b54\u6848:", "\u6700\u7ec8\u7b54\u6848:"):
+            if lowered.startswith(prefix):
+                return clean_surface(line.split(":", 1)[-1])
+
     first = lines[0]
-    lowered = first.lower()
-    for prefix in ("answer:", "答案：", "答案:", "response:"):
-        if lowered.startswith(prefix):
-            return clean_surface(first.split(":", 1)[-1])
+    if _looks_like_reasoning_header(first):
+        return ""
     return first
 
 
