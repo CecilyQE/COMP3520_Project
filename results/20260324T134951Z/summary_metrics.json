@@ -1,0 +1,41 @@
+[
+  {
+    "metric_family": "cross_lingual",
+    "provider": "openai",
+    "model": "Qwen/Qwen3.5-35B-A3B",
+    "round_index": 1,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.04885606006223386,
+    "mean_tvd": 0.09999999999999999,
+    "mean_top1_match": 1.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": null,
+    "item_count": 14
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "Qwen/Qwen3.5-35B-A3B",
+    "round_index": 1,
+    "prompt_language": "en",
+    "mean_jsd": 1.0,
+    "mean_tvd": 1.0,
+    "mean_top1_match": 0.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.572958286898276,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "Qwen/Qwen3.5-35B-A3B",
+    "round_index": 1,
+    "prompt_language": "zh",
+    "mean_jsd": 1.0,
+    "mean_tvd": 1.0,
+    "mean_top1_match": 0.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.4986783929273857,
+    "item_count": 14
+  }
+]

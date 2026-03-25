@@ -16,29 +16,58 @@ class OpenAIProvider(BaseProvider):
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         started = time.perf_counter()
-        response = self.client.responses.create(
-            model=request.model,
-            input=[
+        import requests
+        import json
+        payload = {
+            "model": request.model,
+            "messages": [
                 {"role": "system", "content": request.system_prompt},
                 {"role": "user", "content": request.user_prompt},
             ],
-            temperature=request.temperature,
-            max_output_tokens=request.max_output_tokens,
+            "temperature": request.temperature,
+            "max_tokens": request.max_output_tokens,
+            "stream": True
+        }
+        res = requests.post(
+            os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/") + "/chat/completions",
+            headers={
+                "Authorization": f"Bearer {os.environ[self.config.api_key_env]}",
+                "Content-Type": "application/json"
+            },
+            json=payload,
+            stream=True,
+            timeout=120
         )
+        res.raise_for_status()
+        
+        full_text = ""
+        for line in res.iter_lines():
+            if not line:
+                continue
+            if not line.startswith(b"data:"):
+                continue
+            if line.strip() == b"data: [DONE]":
+                break
+            try:
+                chunk = json.loads(line.decode("utf-8", errors="ignore")[5:])
+                if "choices" in chunk and len(chunk["choices"]) > 0:
+                    delta = chunk["choices"][0].get("delta", {})
+                    full_text += delta.get("content", "")
+            except Exception:
+                pass
+                
         latency = time.perf_counter() - started
-        usage = getattr(response, "usage", None)
-        request_id = getattr(response, "_request_id", None) or getattr(response, "id", None)
         return GenerationResponse(
             provider="openai",
             model=request.model,
-            text=getattr(response, "output_text", "") or "",
-            raw_payload=self._safe_dump(response),
-            resolved_model=getattr(response, "model", None) or request.model,
-            provider_backend="openai_responses",
+            text=full_text,
+            raw_payload="streaming",
+            resolved_model=request.model,
+            provider_backend="requests_atomgit_stream",
             finish_reason=None,
-            request_id=request_id,
-            prompt_tokens=getattr(usage, "input_tokens", None) if usage else None,
-            completion_tokens=getattr(usage, "output_tokens", None) if usage else None,
-            total_tokens=getattr(usage, "total_tokens", None) if usage else None,
+            request_id=None,
+            prompt_tokens=None,
+            completion_tokens=None,
+            total_tokens=None,
             latency_seconds=latency,
         )

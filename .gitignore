@@ -1,5 +1,8 @@
 .env
+.vscode/
 .pytest_cache/
+matplotlib-*/
+pytest-of-*/
 *.pyc
 __pycache__/
 artifacts/
