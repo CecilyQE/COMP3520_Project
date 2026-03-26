@@ -55,7 +55,7 @@ class OpenAIProvider(BaseProvider):
             line = raw_line.strip()
             if not line.startswith(b"data:"):
                 continue
-            if line == b"data: [DONE]":
+            if line in (b"data: [DONE]", b"data:[DONE]"):
                 break
             try:
                 chunk = json.loads(line.decode("utf-8", errors="ignore")[5:].strip())

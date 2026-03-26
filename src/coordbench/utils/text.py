@@ -70,6 +70,22 @@ def extract_first_answer_line(value: str) -> str:
 
     first = lines[0]
     if _looks_like_reasoning_header(first):
+        # Qwen3.5 outputs "Thinking Process:...\n\nAnswer" without </think> tags.
+        # Fall back to the last non-empty, non-header line — but only if it
+        # looks like a genuine short answer rather than a truncated reasoning step.
+        for line in reversed(lines):
+            if _looks_like_reasoning_header(line):
+                continue
+            # Reject lines that look like reasoning steps (numbered, bulleted, bold)
+            stripped = line.lstrip()
+            if re.match(r"^\d+[\.\)]\s", stripped):
+                continue
+            if stripped.startswith(("- ", "* ", "**")):
+                continue
+            # Only accept short, clean answers (typical answer is a word or short phrase)
+            if len(line) > 80:
+                continue
+            return line
         return ""
     return first
 
