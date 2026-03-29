@@ -272,6 +272,7 @@ def run_sampling(
                     if validation_error:
                         raise RuntimeError(validation_error)
                     save_cached_response(config.outputs.cache_root, single_request, response)
+                    time.sleep(2)  # cooldown between successful requests
                     return {
                         "request": single_request,
                         "response": response,
@@ -281,7 +282,7 @@ def run_sampling(
                     }
                 except Exception as exc:  # noqa: BLE001
                     last_error = exc
-                    sleep_seconds = min(2**attempt, 20)
+                    sleep_seconds = min(2**attempt * 3, 60)
                     LOGGER.warning(
                         "Provider %s failed on %s attempt %s/%s: %s",
                         provider_name,

@@ -1,8 +1,8 @@
 providers:
   openai:
     enabled: true
-    model: ${OPENAI_MODEL}
-    api_key_env: OPENAI_API_KEY
+    model: Qwen/Qwen3.5-397B-A17B
+    api_key_env: OPENAI_API_KEY_397B
     concurrency: 3
     max_retries: 20
     temperature: 1.0
