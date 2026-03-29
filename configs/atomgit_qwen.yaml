@@ -12,9 +12,9 @@ sampling:
   panel_id: study2_british_within
   answer_language: English
   prompt_languages: [en, zh]
-  round1_samples: 30
-  round2_samples: 10
-  enable_round2: true
+  round1_samples: 1
+  round2_samples: 0
+  enable_round2: false
   round2_trigger: cross_lingual_top1_mismatch
   random_seed: 20260324
 

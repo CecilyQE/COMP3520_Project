@@ -62,29 +62,44 @@ def extract_first_answer_line(value: str) -> str:
     if not lines:
         return ""
 
-    for line in lines:
-        lowered = line.lower()
-        for prefix in ("answer:", "final answer:", "response:", "\u7b54\u6848:", "\u6700\u7ec8\u7b54\u6848:"):
-            if lowered.startswith(prefix):
-                return clean_surface(line.split(":", 1)[-1])
+    # Higher priority: search for explicit final answer markers in the full text
+    lowered_all = value.lower()
+    for marker in ("final answer:", "the most likely answer is:", "\u6700\u7ec8\u7b54\u6848:", "answer:"):
+        if marker in lowered_all:
+            parts = re.split(re.escape(marker), value, flags=re.IGNORECASE)
+            if parts and len(parts) > 1:
+                ans = clean_surface(parts[-1].splitlines()[0])
+                if ans: return ans
 
     first = lines[0]
     if _looks_like_reasoning_header(first):
         # Qwen3.5 outputs "Thinking Process:...\n\nAnswer" without </think> tags.
-        # Fall back to the last non-empty, non-header line — but only if it
-        # looks like a genuine short answer rather than a truncated reasoning step.
         for line in reversed(lines):
-            if _looks_like_reasoning_header(line):
+            # Skip empty or headers
+            if not line or _looks_like_reasoning_header(line):
                 continue
-            # Reject lines that look like reasoning steps (numbered, bulleted, bold)
+            
+            # Skip obvious reasoning meta-talk
+            low = line.lower()
+            if any(x in low for x in ("wait,", "actually,", "let me re-evaluate", "i will provide", "thinking process")):
+                continue
+
+            # Look for bold final answer like **London**
+            bold_match = re.search(r"\*\*(.*?)\*\*", line)
+            if bold_match:
+                return clean_surface(bold_match.group(1))
+
+            # Filter out numbered steps but allow short bold text or plain text
             stripped = line.lstrip()
             if re.match(r"^\d+[\.\)]\s", stripped):
                 continue
-            if stripped.startswith(("- ", "* ", "**")):
+            if stripped.startswith(("- ", "* ")):
                 continue
-            # Only accept short, clean answers (typical answer is a word or short phrase)
-            if len(line) > 80:
+            
+            # Typical answer is short. If it's too long (>100), it might be a sentence summary.
+            if len(line) > 100:
                 continue
+
             return line
         return ""
     return first
