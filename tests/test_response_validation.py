@@ -21,3 +21,13 @@ def test_response_validation_rejects_service_error_text():
 def test_response_validation_rejects_empty_and_accepts_plain_answer():
     assert response_validation_error(text="") == "empty response text"
     assert response_validation_error(text="London", finish_reason="stop") is None
+
+
+def test_response_validation_rejects_truncated_partial_answer():
+    assert (
+        response_validation_error(
+            text="Harry Potter and the Philosopher's",
+            finish_reason="MAX_TOKENS",
+        )
+        == "response was truncated before a final answer was produced"
+    )

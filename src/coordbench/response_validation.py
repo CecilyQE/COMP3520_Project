@@ -43,11 +43,12 @@ def response_validation_error(
     if looks_like_service_error(text):
         return "provider returned a service error message instead of an answer"
 
+    lowered_finish_reason = str(finish_reason or "").strip().lower()
+    if lowered_finish_reason in {"length", "max_tokens"}:
+        return "response was truncated before a final answer was produced"
+
     answer = extract_first_answer_line(text)
     if answer:
         return None
 
-    lowered_finish_reason = str(finish_reason or "").strip().lower()
-    if lowered_finish_reason in {"length", "max_tokens"}:
-        return "response was truncated before a final answer was produced"
     return "response does not contain a usable final answer"
