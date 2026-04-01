@@ -1,0 +1,27 @@
+{
+  "run_id": "20260401T075525Z",
+  "created_at_utc": "2026-04-01T07:55:25.728969+00:00",
+  "config_path": "/Users/richardlee/COMP3520/COMP3520_Project/configs/study2_british_en_zh.yaml",
+  "prepared_snapshot_id": "20260324T070530Z",
+  "prepared_snapshot_path": "/Users/richardlee/COMP3520/COMP3520_Project/data/prepared/20260324T070530Z",
+  "panel_id": "study2_british_within",
+  "prompt_languages": [
+    "en",
+    "zh"
+  ],
+  "answer_language": "English",
+  "completed_rounds": [
+    1,
+    2
+  ],
+  "normalization_completed": true,
+  "unresolved_count": 49,
+  "raw_record_count": 1000,
+  "deduped_raw_record_count": 1000,
+  "analysis_completed": true,
+  "cell_completion_threshold": 0.8,
+  "complete_cell_count": 40,
+  "incomplete_cell_count": 0,
+  "item_metric_count": 60,
+  "round2_candidate_count": 5
+}
