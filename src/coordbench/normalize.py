@@ -70,7 +70,12 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
         answer_key = row["answer_key"]
         canonical_answer = ""
         status = "invalid"
-        validation_error = row.get("response_validation_error")
+        validation_error_raw = row.get("response_validation_error")
+        validation_error_text = str(validation_error_raw).strip()
+        if pd.isna(validation_error_raw) or validation_error_text.lower() in {"", "nan", "none"}:
+            validation_error = None
+        else:
+            validation_error = validation_error_text
 
         if not validation_error and answer_key:
             alias_matches = aliases[

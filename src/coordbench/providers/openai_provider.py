@@ -18,6 +18,35 @@ class OpenAIProvider(BaseProvider):
         self.session = requests.Session()
         self.session.trust_env = False
 
+    def _json_response(self, request: GenerationRequest, response: requests.Response, latency: float) -> GenerationResponse:
+        payload = response.json()
+        choices = payload.get("choices")
+        choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+        message = choice.get("message", {}) if isinstance(choice.get("message"), dict) else {}
+        content = message.get("content")
+        full_text = ""
+        if isinstance(content, str):
+            full_text = content
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    full_text += str(part.get("text", ""))
+        usage = payload.get("usage", {}) if isinstance(payload.get("usage"), dict) else {}
+        return GenerationResponse(
+            provider="openai",
+            model=request.model,
+            text=full_text,
+            raw_payload=payload,
+            resolved_model=str(payload.get("model", "")).strip() or request.model,
+            provider_backend="openai_chat_completions_json",
+            finish_reason=str(choice.get("finish_reason", "")).strip() or None,
+            request_id=str(payload.get("id", "")).strip() or response.headers.get("x-request-id"),
+            prompt_tokens=usage.get("prompt_tokens"),
+            completion_tokens=usage.get("completion_tokens"),
+            total_tokens=usage.get("total_tokens"),
+            latency_seconds=latency,
+        )
+
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         started = time.perf_counter()
         payload = {
@@ -42,6 +71,10 @@ class OpenAIProvider(BaseProvider):
             timeout=self.timeout_seconds,
         )
         response.raise_for_status()
+        latency = time.perf_counter() - started
+        content_type = str(response.headers.get("content-type", "")).lower()
+        if "application/json" in content_type:
+            return self._json_response(request, response, latency)
 
         full_text = ""
         response_id = None
@@ -88,7 +121,12 @@ class OpenAIProvider(BaseProvider):
             if choice.get("finish_reason") is not None:
                 finish_reason = str(choice["finish_reason"])
 
-        latency = time.perf_counter() - started
+        if not full_text and event_count == 0:
+            try:
+                return self._json_response(request, response, latency)
+            except Exception:
+                pass
+
         return GenerationResponse(
             provider="openai",
             model=request.model,

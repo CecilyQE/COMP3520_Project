@@ -28,6 +28,13 @@ class GeminiProvider(BaseProvider):
         )
         latency = time.perf_counter() - started
         usage = getattr(response, "usage_metadata", None)
+        finish_reason = None
+        candidates = getattr(response, "candidates", None)
+        if isinstance(candidates, list) and candidates:
+            first_candidate = candidates[0]
+            finish_reason = getattr(first_candidate, "finish_reason", None)
+            if finish_reason is not None:
+                finish_reason = str(finish_reason)
         return GenerationResponse(
             provider="gemini",
             model=request.model,
@@ -35,7 +42,7 @@ class GeminiProvider(BaseProvider):
             raw_payload=self._safe_dump(response),
             resolved_model=getattr(response, "model_version", None) or getattr(response, "model", None) or request.model,
             provider_backend="gemini_generate_content",
-            finish_reason=None,
+            finish_reason=finish_reason,
             request_id=getattr(response, "response_id", None),
             prompt_tokens=getattr(usage, "prompt_token_count", None) if usage else None,
             completion_tokens=getattr(usage, "candidates_token_count", None) if usage else None,
