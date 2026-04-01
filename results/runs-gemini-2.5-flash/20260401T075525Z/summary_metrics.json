@@ -1,0 +1,80 @@
+[
+  {
+    "metric_family": "cross_lingual",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 1,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.12257900261660944,
+    "mean_tvd": 0.20000000000000004,
+    "mean_top1_match": 0.6666666666666666,
+    "mean_flip_rate": 0.3333333333333333,
+    "mean_spearman": 0.4747563352826511,
+    "item_count": 15
+  },
+  {
+    "metric_family": "cross_lingual",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 2,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.21350475942656005,
+    "mean_tvd": 0.44000000000000006,
+    "mean_top1_match": 0.2,
+    "mean_flip_rate": 0.8,
+    "mean_spearman": -0.43301270189221935,
+    "item_count": 5
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 1,
+    "prompt_language": "en",
+    "mean_jsd": 0.8359895252644907,
+    "mean_tvd": 0.8693333333333333,
+    "mean_top1_match": 0.06666666666666667,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.2518969140436584,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 1,
+    "prompt_language": "zh",
+    "mean_jsd": 0.8172721418021064,
+    "mean_tvd": 0.8635555555555555,
+    "mean_top1_match": 0.06666666666666667,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.24810698655357535,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 2,
+    "prompt_language": "en",
+    "mean_jsd": 0.7815692818166178,
+    "mean_tvd": 0.834,
+    "mean_top1_match": 0.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.1575539182387682,
+    "item_count": 5
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "round_index": 2,
+    "prompt_language": "zh",
+    "mean_jsd": 0.8045951616581556,
+    "mean_tvd": 0.8620000000000001,
+    "mean_top1_match": 0.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": -0.15717351185231287,
+    "item_count": 5
+  }
+]
