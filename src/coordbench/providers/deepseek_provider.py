@@ -20,16 +20,30 @@ class DeepSeekProvider(BaseProvider):
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         started = time.perf_counter()
-        response = self.client.chat.completions.create(
-            model=request.model,
-            messages=[
+        payload = {
+            "model": request.model,
+            "messages": [
                 {"role": "system", "content": request.system_prompt},
                 {"role": "user", "content": request.user_prompt},
             ],
-            temperature=request.temperature,
-            max_tokens=request.max_output_tokens,
-            stream=False,
-        )
+            "temperature": request.temperature,
+            "max_tokens": request.max_output_tokens,
+            "stream": False,
+        }
+        if request.seed is not None:
+            payload["seed"] = request.seed
+
+        seed_supported = request.seed is not None
+        seed_used = request.seed if request.seed is not None else None
+        try:
+            response = self.client.chat.completions.create(**payload)
+        except Exception as exc:  # noqa: BLE001
+            if request.seed is None or not self._seed_unsupported_exception(exc):
+                raise
+            payload.pop("seed", None)
+            response = self.client.chat.completions.create(**payload)
+            seed_supported = False
+            seed_used = None
         latency = time.perf_counter() - started
         usage = getattr(response, "usage", None)
         choice = response.choices[0] if getattr(response, "choices", None) else None
@@ -48,4 +62,6 @@ class DeepSeekProvider(BaseProvider):
             completion_tokens=getattr(usage, "completion_tokens", None) if usage else None,
             total_tokens=getattr(usage, "total_tokens", None) if usage else None,
             latency_seconds=latency,
+            seed_supported=seed_supported,
+            seed_used=seed_used,
         )

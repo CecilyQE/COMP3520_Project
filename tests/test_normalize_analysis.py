@@ -269,3 +269,64 @@ def test_normalize_marks_service_errors_and_truncated_reasoning_invalid(tmp_path
 
     valid_rows = normalized[normalized["prompt_language"] == "zh"].reset_index(drop=True)
     assert valid_rows["canonical_answer"].tolist() == ["old_london", "old_london"]
+
+
+def test_normalize_rehydrates_currency_symbol_answer_keys_from_old_snapshot(tmp_path: Path, monkeypatch):
+    prepared_root = tmp_path / "prepared"
+    snapshot = prepared_root / "snapshot"
+    snapshot.mkdir(parents=True)
+
+    pd.DataFrame(
+        [
+            {
+                "panel_id": "study2_british_within",
+                "item_id": "study2_item_01",
+                "answer_key": "",
+                "canonical_answer": "$",
+                "count": 100,
+                "probability": 1.0,
+            }
+        ]
+    ).to_csv(snapshot / "human_distributions.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "panel_id": "study2_british_within",
+                "study_id": "study2",
+                "respondent_group": "british",
+                "target_group": "british",
+                "relation": "within",
+                "item_id": "study2_item_01",
+                "item_number": 1,
+                "item_text_en": "Name a currency",
+                "item_text_zh": "currency zh",
+            }
+        ]
+    ).to_csv(snapshot / "panel_items.csv", index=False)
+    (snapshot / "benchmark_manifest.json").write_text(
+        json.dumps({"prepared_snapshot_id": "snapshot", "default_panel_id": "study2_british_within"}),
+        encoding="utf-8",
+    )
+
+    config_path = _write_config(tmp_path, round1_samples=1)
+    run_dir = tmp_path / "runs" / "currencyrun"
+    run_dir.mkdir(parents=True)
+    (run_dir / "run_manifest.json").write_text(
+        json.dumps({"run_id": "currencyrun", "prepared_snapshot_id": "snapshot", "panel_id": "study2_british_within"}),
+        encoding="utf-8",
+    )
+    raw_rows = [
+        _raw_row(prompt_language="en", sample_index=0, response_text="$", request_cache_key="en-0"),
+        _raw_row(prompt_language="zh", sample_index=0, response_text="$", request_cache_key="zh-0"),
+    ]
+    with (run_dir / "raw_generations.jsonl").open("w", encoding="utf-8") as handle:
+        for row in raw_rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    monkeypatch.setattr("coordbench.run_state.prepared_root", lambda: prepared_root)
+
+    normalize_run(config_path, run_dir)
+
+    normalized = pd.read_csv(run_dir / "normalized_outputs.csv")
+    assert normalized["normalization_status"].tolist() == ["human_key", "human_key"]
+    assert normalized["canonical_answer"].tolist() == ["$", "$"]

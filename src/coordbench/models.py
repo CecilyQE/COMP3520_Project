@@ -48,6 +48,8 @@ class GenerationResponse:
     total_tokens: int | None = None
     latency_seconds: float | None = None
     cache_hit: bool = False
+    seed_supported: bool | None = None
+    seed_used: int | None = None
     error: str | None = None
 
 

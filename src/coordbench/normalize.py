@@ -53,6 +53,12 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
 
     aliases = _load_aliases(config.normalization.alias_path)
     human = pd.read_csv(prepared_dir / "human_distributions.csv")
+    human["answer_key"] = human["answer_key"].fillna("").astype(str)
+    missing_human_keys = human["answer_key"].str.strip() == ""
+    if missing_human_keys.any():
+        human.loc[missing_human_keys, "answer_key"] = (
+            human.loc[missing_human_keys, "canonical_answer"].astype(str).map(make_match_key)
+        )
     human_lookup: dict[tuple[str, str, str], str] = {
         (row.panel_id, row.item_id, row.answer_key): row.canonical_answer for row in human.itertuples()
     }

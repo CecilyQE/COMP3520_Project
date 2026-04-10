@@ -9,7 +9,7 @@ import pandas as pd
 
 from coordbench.paths import prepared_root
 from coordbench.utils.files import read_json, write_json
-from coordbench.utils.text import ascii_fold
+from coordbench.utils.text import ascii_fold, make_match_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,6 +42,20 @@ def profile_dataset(prepared_snapshot_dir: Path | None = None) -> Path:
     participant = pd.read_csv(prepared_snapshot_dir / "participant_responses.csv")
     human = pd.read_csv(prepared_snapshot_dir / "human_distributions.csv")
     manifest = read_json(prepared_snapshot_dir / "benchmark_manifest.json")
+
+    participant["answer_key"] = participant["answer_key"].fillna("").astype(str)
+    missing_participant_keys = participant["answer_key"].str.strip() == ""
+    if missing_participant_keys.any():
+        participant.loc[missing_participant_keys, "answer_key"] = (
+            participant.loc[missing_participant_keys, "response_clean"].astype(str).map(make_match_key)
+        )
+
+    human["answer_key"] = human["answer_key"].fillna("").astype(str)
+    missing_human_keys = human["answer_key"].str.strip() == ""
+    if missing_human_keys.any():
+        human.loc[missing_human_keys, "answer_key"] = (
+            human.loc[missing_human_keys, "canonical_answer"].astype(str).map(make_match_key)
+        )
 
     item_metrics = (
         human.groupby(["panel_id", "item_id"])

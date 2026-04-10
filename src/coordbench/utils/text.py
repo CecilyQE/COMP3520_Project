@@ -5,6 +5,16 @@ import unicodedata
 from collections import Counter
 from typing import Iterable
 
+CURRENCY_SYMBOL_TOKENS = {
+    "$": " dollar ",
+    "£": " pound ",
+    "€": " euro ",
+    "¥": " yen ",
+    "₹": " rupee ",
+    "₩": " won ",
+    "₽": " ruble ",
+}
+
 
 def collapse_whitespace(value: str) -> str:
     return re.sub(r"\s+", " ", value.strip())
@@ -26,6 +36,8 @@ def ascii_fold(value: str) -> str:
 
 def make_match_key(value: str) -> str:
     value = clean_surface(value).lower()
+    for symbol, token in CURRENCY_SYMBOL_TOKENS.items():
+        value = value.replace(symbol, token)
     value = ascii_fold(value)
     return re.sub(r"[^a-z0-9]+", "", value)
 

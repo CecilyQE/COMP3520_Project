@@ -114,11 +114,12 @@ class AnthropicProvider(BaseProvider):
             completion_tokens=output_tokens,
             total_tokens=total_tokens,
             latency_seconds=latency,
+            seed_supported=False,
+            seed_used=None,
         )
 
-    def _generate_openai_compat(self, request: GenerationRequest) -> GenerationResponse:
-        started = time.perf_counter()
-        response = self.session.post(
+    def _post_openai_compat(self, payload: dict) -> requests.Response:
+        return self.session.post(
             f"{self.base_url}/v1/chat/completions",
             timeout=self.timeout_seconds,
             headers={
@@ -126,16 +127,31 @@ class AnthropicProvider(BaseProvider):
                 "content-type": "application/json",
                 "accept": "application/json",
             },
-            json={
-                "model": request.model,
-                "messages": [
-                    {"role": "system", "content": request.system_prompt},
-                    {"role": "user", "content": request.user_prompt},
-                ],
-                "max_tokens": request.max_output_tokens,
-                "temperature": request.temperature,
-            },
+            json=payload,
         )
+
+    def _generate_openai_compat(self, request: GenerationRequest) -> GenerationResponse:
+        started = time.perf_counter()
+        payload = {
+            "model": request.model,
+            "messages": [
+                {"role": "system", "content": request.system_prompt},
+                {"role": "user", "content": request.user_prompt},
+            ],
+            "max_tokens": request.max_output_tokens,
+            "temperature": request.temperature,
+        }
+        if request.seed is not None:
+            payload["seed"] = request.seed
+
+        response = self._post_openai_compat(payload)
+        seed_supported = request.seed is not None
+        seed_used = request.seed if request.seed is not None else None
+        if request.seed is not None and self._seed_unsupported_response(response):
+            payload.pop("seed", None)
+            response = self._post_openai_compat(payload)
+            seed_supported = False
+            seed_used = None
         response.raise_for_status()
         payload = self._json_payload(response)
         latency = time.perf_counter() - started
@@ -155,4 +171,6 @@ class AnthropicProvider(BaseProvider):
             completion_tokens=usage.get("completion_tokens"),
             total_tokens=usage.get("total_tokens"),
             latency_seconds=latency,
+            seed_supported=seed_supported,
+            seed_used=seed_used,
         )

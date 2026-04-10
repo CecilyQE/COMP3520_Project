@@ -109,3 +109,54 @@ def test_extract_prompt_from_raw_prefers_specific_aliases():
         "Name a television broadcasting organisation"
     )
     assert _extract_prompt_from_raw("14.nameaflower", item_table, 14) == "Name a typical flower"
+
+
+def test_profile_dataset_rehydrates_symbol_answer_keys_for_old_snapshot(tmp_path: Path):
+    prepared_dir = tmp_path / "prepared" / "snapshot"
+    prepared_dir.mkdir(parents=True)
+
+    pd.DataFrame(
+        [
+            {
+                "panel_id": "study2_british_within",
+                "study_id": "study2",
+                "respondent_group": "british",
+                "target_group": "british",
+                "relation": "within",
+                "item_id": "study2_item_01",
+                "item_number": 1,
+                "item_text_en": "Name a currency",
+                "item_text_zh": "currency zh",
+                "participant_id": "p1",
+                "response_original": "$",
+                "response_clean": "$",
+                "answer_key": "",
+                "source_file": "Study2.csv",
+                "source_column": "item_1_uk",
+            }
+        ]
+    ).to_csv(prepared_dir / "participant_responses.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "panel_id": "study2_british_within",
+                "item_id": "study2_item_01",
+                "answer_key": "",
+                "canonical_answer": "$",
+                "count": 1,
+                "probability": 1.0,
+            }
+        ]
+    ).to_csv(prepared_dir / "human_distributions.csv", index=False)
+    (prepared_dir / "benchmark_manifest.json").write_text(
+        json.dumps({"prepared_snapshot_id": "snapshot", "default_panel_id": "study2_british_within"}),
+        encoding="utf-8",
+    )
+
+    profile_dataset(prepared_dir)
+
+    panel_summary = pd.read_csv(prepared_dir / "panel_summary.csv")
+    assert int(panel_summary.iloc[0]["empty_response_count"]) == 0
+
+    inventory = json.loads((prepared_dir / "dataset_inventory.json").read_text(encoding="utf-8"))
+    assert inventory["items"][0]["unique_answers"] == 1

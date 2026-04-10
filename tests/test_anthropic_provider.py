@@ -58,6 +58,7 @@ def test_anthropic_provider_payload(monkeypatch):
         user_prompt="Category: Name a city",
         temperature=1.0,
         max_output_tokens=24,
+        seed=111,
     )
 
     response = provider.generate(request)
@@ -65,6 +66,9 @@ def test_anthropic_provider_payload(monkeypatch):
     assert response.text == "London"
     assert fake_session.calls[0]["url"] == "https://api.example.com/v1/messages"
     assert fake_session.calls[0]["json"]["model"] == "claude-opus-4-5"
+    assert "seed" not in fake_session.calls[0]["json"]
+    assert response.seed_supported is False
+    assert response.seed_used is None
 
 
 def test_anthropic_provider_openai_compat(monkeypatch):
@@ -114,9 +118,13 @@ def test_anthropic_provider_openai_compat(monkeypatch):
         user_prompt="Category: Name a city",
         temperature=1.0,
         max_output_tokens=24,
+        seed=222,
     )
 
     response = provider.generate(request)
 
     assert response.text == "London"
     assert fake_session.calls[0]["url"] == "https://api.example.com/v1/chat/completions"
+    assert fake_session.calls[0]["json"]["seed"] == 222
+    assert response.seed_supported is True
+    assert response.seed_used == 222

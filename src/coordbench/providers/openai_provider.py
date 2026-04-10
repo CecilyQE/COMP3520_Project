@@ -21,7 +21,37 @@ class OpenAIProvider(BaseProvider):
         self.session = requests.Session()
         self.session.trust_env = False
 
-    def _json_response(self, request: GenerationRequest, response: requests.Response, latency: float) -> GenerationResponse:
+    def _post_chat_completions(self, payload: dict) -> requests.Response:
+        return self.session.post(
+            f"{self.base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {os.environ[self.config.api_key_env]}",
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream, application/json",
+            },
+            json=payload,
+            stream=True,
+            timeout=self.timeout_seconds,
+        )
+
+    def _send_with_optional_seed(self, payload: dict, seed: int | None) -> tuple[requests.Response, bool, int | None]:
+        response = self._post_chat_completions(payload)
+        if seed is not None and self._seed_unsupported_response(response):
+            retry_payload = dict(payload)
+            retry_payload.pop("seed", None)
+            response = self._post_chat_completions(retry_payload)
+            return response, False, None
+        return response, seed is not None, seed
+
+    def _json_response(
+        self,
+        request: GenerationRequest,
+        response: requests.Response,
+        latency: float,
+        *,
+        seed_supported: bool | None,
+        seed_used: int | None,
+    ) -> GenerationResponse:
         payload = response.json()
         choices = payload.get("choices")
         choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
@@ -48,6 +78,8 @@ class OpenAIProvider(BaseProvider):
             completion_tokens=usage.get("completion_tokens"),
             total_tokens=usage.get("total_tokens"),
             latency_seconds=latency,
+            seed_supported=seed_supported,
+            seed_used=seed_used,
         )
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
@@ -62,22 +94,20 @@ class OpenAIProvider(BaseProvider):
             "max_tokens": request.max_output_tokens,
             "stream": True,
         }
-        response = self.session.post(
-            f"{self.base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {os.environ[self.config.api_key_env]}",
-                "Content-Type": "application/json",
-                "Accept": "text/event-stream, application/json",
-            },
-            json=payload,
-            stream=True,
-            timeout=self.timeout_seconds,
-        )
+        if request.seed is not None:
+            payload["seed"] = request.seed
+        response, seed_supported, seed_used = self._send_with_optional_seed(payload, request.seed)
         response.raise_for_status()
-        latency = time.perf_counter() - started
         content_type = str(response.headers.get("content-type", "")).lower()
         if "application/json" in content_type:
-            return self._json_response(request, response, latency)
+            latency = time.perf_counter() - started
+            return self._json_response(
+                request,
+                response,
+                latency,
+                seed_supported=seed_supported,
+                seed_used=seed_used,
+            )
 
         full_text = ""
         response_id = None
@@ -126,10 +156,18 @@ class OpenAIProvider(BaseProvider):
 
         if not full_text and event_count == 0:
             try:
-                return self._json_response(request, response, latency)
+                latency = time.perf_counter() - started
+                return self._json_response(
+                    request,
+                    response,
+                    latency,
+                    seed_supported=seed_supported,
+                    seed_used=seed_used,
+                )
             except Exception:
                 pass
 
+        latency = time.perf_counter() - started
         return GenerationResponse(
             provider="openai",
             model=request.model,
@@ -148,4 +186,6 @@ class OpenAIProvider(BaseProvider):
             completion_tokens=usage.get("completion_tokens"),
             total_tokens=usage.get("total_tokens"),
             latency_seconds=latency,
+            seed_supported=seed_supported,
+            seed_used=seed_used,
         )

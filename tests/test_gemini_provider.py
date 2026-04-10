@@ -30,12 +30,17 @@ class _FakeResponse:
 
 
 class _FakeModels:
+    def __init__(self):
+        self.calls = []
+
     def generate_content(self, **kwargs):
+        self.calls.append(kwargs)
         return _FakeResponse()
 
 
 class _FakeClient:
-    models = _FakeModels()
+    def __init__(self):
+        self.models = _FakeModels()
 
 
 def test_gemini_provider_records_finish_reason(monkeypatch):
@@ -63,9 +68,13 @@ def test_gemini_provider_records_finish_reason(monkeypatch):
         user_prompt="Category: Name a city",
         temperature=1.0,
         max_output_tokens=24,
+        seed=456,
     )
 
     response = provider.generate(request)
 
     assert response.text == "London"
     assert response.finish_reason == "MAX_TOKENS"
+    assert response.seed_supported is True
+    assert response.seed_used == 456
+    assert provider.client.models.calls[0]["config"].seed == 456

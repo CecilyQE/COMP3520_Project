@@ -24,6 +24,7 @@ class GeminiProvider(BaseProvider):
                 system_instruction=request.system_prompt,
                 temperature=request.temperature,
                 max_output_tokens=request.max_output_tokens,
+                seed=request.seed,
             ),
         )
         latency = time.perf_counter() - started
@@ -48,4 +49,6 @@ class GeminiProvider(BaseProvider):
             completion_tokens=getattr(usage, "candidates_token_count", None) if usage else None,
             total_tokens=getattr(usage, "total_token_count", None) if usage else None,
             latency_seconds=latency,
+            seed_supported=request.seed is not None,
+            seed_used=request.seed,
         )
