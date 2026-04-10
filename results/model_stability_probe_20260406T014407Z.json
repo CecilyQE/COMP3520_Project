@@ -1,0 +1,233 @@
+{
+  "batch_tag": "20260406T014407Z",
+  "config_path": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\configs\\universal_api_openai.yaml",
+  "item_snapshot_id": "20260324T070530Z",
+  "item_ids": [
+    "study2_item_01",
+    "study2_item_02",
+    "study2_item_03",
+    "study2_item_04",
+    "study2_item_05"
+  ],
+  "item_count": 5,
+  "concurrency_levels": [
+    1,
+    2,
+    4
+  ],
+  "model_pool": [
+    "mimo-v2-omni",
+    "mimo-v2-pro"
+  ],
+  "probe_runs": [
+    {
+      "model": "mimo-v2-omni",
+      "concurrency": 1,
+      "status": "stable",
+      "note": "retry_records=2",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-omni\\c1\\20260405T174407Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 0,
+      "retry_record_count": 2,
+      "avg_latency_seconds": 3.24,
+      "max_latency_seconds": 5.41,
+      "unresolved_count": 0,
+      "round2_candidate_count": 1,
+      "cross_lingual_round1_jsd": 0.2,
+      "cross_lingual_round1_top1": 0.8,
+      "human_alignment_en_round1_jsd": 0.5236621775741972,
+      "human_alignment_zh_round1_jsd": 0.44353432439544643,
+      "sample_answers": [
+        "London",
+        "David Beckham",
+        "Donald Trump",
+        "Big Ben",
+        "Ben Nevis"
+      ]
+    },
+    {
+      "model": "mimo-v2-omni",
+      "concurrency": 2,
+      "status": "stable",
+      "note": "retry_records=1",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-omni\\c2\\20260405T174747Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 0,
+      "retry_record_count": 1,
+      "avg_latency_seconds": 3.09,
+      "max_latency_seconds": 4.69,
+      "unresolved_count": 1,
+      "round2_candidate_count": 2,
+      "cross_lingual_round1_jsd": 0.4,
+      "cross_lingual_round1_top1": 0.6,
+      "human_alignment_en_round1_jsd": 0.5269639443018427,
+      "human_alignment_zh_round1_jsd": 0.5569263517760967,
+      "sample_answers": [
+        "London",
+        "Boris Johnson",
+        "Buckingham Palace",
+        "Ben Nevis",
+        "**London**"
+      ]
+    },
+    {
+      "model": "mimo-v2-omni",
+      "concurrency": 4,
+      "status": "stable",
+      "note": "retry_records=1",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-omni\\c4\\20260405T174853Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 0,
+      "retry_record_count": 1,
+      "avg_latency_seconds": 3.18,
+      "max_latency_seconds": 4.79,
+      "unresolved_count": 2,
+      "round2_candidate_count": 1,
+      "cross_lingual_round1_jsd": 0.2,
+      "cross_lingual_round1_top1": 0.8,
+      "human_alignment_en_round1_jsd": 0.5569263517760967,
+      "human_alignment_zh_round1_jsd": 0.5569263517760967,
+      "sample_answers": [
+        "David Beckham",
+        "Big Ben",
+        "**Keir Starmer**",
+        "London",
+        "Ben Nevis"
+      ]
+    },
+    {
+      "model": "mimo-v2-pro",
+      "concurrency": 1,
+      "status": "stable",
+      "note": "ok",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-pro\\c1\\20260405T174906Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 0,
+      "retry_record_count": 0,
+      "avg_latency_seconds": 3.93,
+      "max_latency_seconds": 5.07,
+      "unresolved_count": 1,
+      "round2_candidate_count": 1,
+      "cross_lingual_round1_jsd": 0.2,
+      "cross_lingual_round1_top1": 0.8,
+      "human_alignment_en_round1_jsd": 0.5569263517760967,
+      "human_alignment_zh_round1_jsd": 0.5427245858724767,
+      "sample_answers": [
+        "London",
+        "**David Beckham**",
+        "Keir Starmer",
+        "Big Ben",
+        "Ben Nevis"
+      ]
+    },
+    {
+      "model": "mimo-v2-pro",
+      "concurrency": 2,
+      "status": "stable",
+      "note": "retry_records=1",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-pro\\c2\\20260405T174945Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 0,
+      "retry_record_count": 1,
+      "avg_latency_seconds": 4.22,
+      "max_latency_seconds": 5.97,
+      "unresolved_count": 0,
+      "round2_candidate_count": 1,
+      "cross_lingual_round1_jsd": 0.2,
+      "cross_lingual_round1_top1": 0.8,
+      "human_alignment_en_round1_jsd": 0.5196264876630499,
+      "human_alignment_zh_round1_jsd": 0.5427245858724767,
+      "sample_answers": [
+        "**London**",
+        "David Beckham",
+        "**Boris Johnson**",
+        "Big Ben",
+        "**Ben Nevis**"
+      ]
+    },
+    {
+      "model": "mimo-v2-pro",
+      "concurrency": 4,
+      "status": "unstable",
+      "note": "truncation_count=1; retry_records=2",
+      "run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-pro\\c4\\20260405T175013Z",
+      "expected_records": 10,
+      "raw_record_count": 10,
+      "provider_errors": 0,
+      "empty_responses": 0,
+      "thinking_pollution": 0,
+      "truncation_count": 1,
+      "retry_record_count": 2,
+      "avg_latency_seconds": 4.32,
+      "max_latency_seconds": 7.18,
+      "unresolved_count": 2,
+      "round2_candidate_count": 1,
+      "cross_lingual_round1_jsd": 0.2,
+      "cross_lingual_round1_top1": 0.8,
+      "human_alignment_en_round1_jsd": 0.5569263517760967,
+      "human_alignment_zh_round1_jsd": 0.5569263517760967,
+      "sample_answers": [
+        "Big Ben",
+        "**David Beckham**",
+        "London",
+        "Ben Nevis",
+        "**Keir Starmer**"
+      ]
+    }
+  ],
+  "model_summaries": [
+    {
+      "model": "mimo-v2-omni",
+      "tested_concurrencies": [
+        1,
+        2,
+        4
+      ],
+      "stable_concurrencies": [
+        1,
+        2,
+        4
+      ],
+      "recommended_concurrency": 4,
+      "status": "stable",
+      "note": "ok",
+      "best_run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-omni\\c4\\20260405T174853Z"
+    },
+    {
+      "model": "mimo-v2-pro",
+      "tested_concurrencies": [
+        1,
+        2,
+        4
+      ],
+      "stable_concurrencies": [
+        1,
+        2
+      ],
+      "recommended_concurrency": 2,
+      "status": "stable",
+      "note": "truncation_count=1; retry_records=2",
+      "best_run_dir": "C:\\Users\\吴彦祖\\Desktop\\comp3520\\artifacts\\stability_probes\\20260406T014407Z\\mimo-v2-pro\\c2\\20260405T174945Z"
+    }
+  ]
+}

@@ -13,7 +13,10 @@ from coordbench.providers.base import BaseProvider
 class OpenAIProvider(BaseProvider):
     def __init__(self, config: ProviderConfig) -> None:
         super().__init__("openai", config)
-        self.base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        self.base_url = str(
+            config.extra.get("base_url")
+            or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        ).rstrip("/")
         self.timeout_seconds = int(config.timeout_seconds)
         self.session = requests.Session()
         self.session.trust_env = False
