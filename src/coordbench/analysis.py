@@ -11,6 +11,7 @@ from coordbench.config import load_config
 from coordbench.metrics import distribution_from_answers, focal_flip, jsd, spearman_frequency, top1_match, tvd
 from coordbench.run_state import dedupe_request_records, prepared_snapshot_dir_for_run, resolve_run_dir
 from coordbench.utils.files import read_json, write_json
+from coordbench.utils.text import make_match_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,25 +71,25 @@ def _empty_frame(columns: list[str]) -> pd.DataFrame:
     return pd.DataFrame(columns=columns)
 
 
-def _item_distribution(frame: pd.DataFrame) -> dict[str, float]:
-    return distribution_from_answers(frame["canonical_answer"].astype(str).tolist())
+def _item_distribution(frame: pd.DataFrame, answer_column: str) -> dict[str, float]:
+    return distribution_from_answers(frame[answer_column].astype(str).tolist())
 
 
 def _expected_samples(config, round_index: int) -> int:
     return config.sampling.round1_samples if int(round_index) == 1 else config.sampling.round2_samples
 
 
-def _cell_completeness(normalized: pd.DataFrame, config) -> pd.DataFrame:
+def _cell_completeness(normalized: pd.DataFrame, config, answer_column: str) -> pd.DataFrame:
     if normalized.empty:
         return _empty_frame(CELL_COMPLETENESS_COLUMNS)
 
     frame = normalized.copy()
-    frame["canonical_answer"] = frame["canonical_answer"].fillna("").astype(str)
+    frame[answer_column] = frame[answer_column].fillna("").astype(str)
     grouped = (
         frame.groupby(CELL_KEYS, dropna=False)
         .agg(
-            raw_record_count=("canonical_answer", "size"),
-            successful_samples=("canonical_answer", lambda values: int((values != "").sum())),
+            raw_record_count=(answer_column, "size"),
+            successful_samples=(answer_column, lambda values: int((values != "").sum())),
         )
         .reset_index()
     )
@@ -107,6 +108,7 @@ def _cross_lingual_rows(
     normalized: pd.DataFrame,
     human_summary: pd.DataFrame,
     cell_completeness: pd.DataFrame,
+    answer_column: str,
 ) -> list[dict[str, Any]]:
     if normalized.empty or cell_completeness.empty:
         return []
@@ -128,8 +130,8 @@ def _cross_lingual_rows(
         lang_groups = {language: subset for language, subset in group.groupby("prompt_language")}
         if "en" not in lang_groups or "zh" not in lang_groups:
             continue
-        en_dist = _item_distribution(lang_groups["en"])
-        zh_dist = _item_distribution(lang_groups["zh"])
+        en_dist = _item_distribution(lang_groups["en"], answer_column)
+        zh_dist = _item_distribution(lang_groups["zh"], answer_column)
         stats = consensus.loc[(panel_id, item_id)]
         rows.append(
             {
@@ -163,6 +165,7 @@ def _human_alignment_rows(
     human: pd.DataFrame,
     human_summary: pd.DataFrame,
     cell_completeness: pd.DataFrame,
+    answer_column: str,
 ) -> list[dict[str, Any]]:
     if normalized.empty or cell_completeness.empty:
         return []
@@ -185,7 +188,7 @@ def _human_alignment_rows(
         cell_stats = cell_lookup.loc[cell_key]
         if not bool(cell_stats["is_complete"]):
             continue
-        llm_dist = _item_distribution(group)
+        llm_dist = _item_distribution(group, answer_column)
         human_dist = human_dists[(panel_id, item_id)]
         stats = consensus.loc[(panel_id, item_id)]
         rows.append(
@@ -227,16 +230,16 @@ def _bootstrap_mean(values: np.ndarray, resamples: int, seed: int = 20260324) ->
 
 
 def _item_level_bootstrap(
-    normalized: pd.DataFrame,
+    cross_lingual_normalized: pd.DataFrame,
+    human_alignment_normalized: pd.DataFrame,
     human: pd.DataFrame,
     resamples: int,
 ) -> list[dict[str, Any]]:
-    if normalized.empty:
+    if cross_lingual_normalized.empty and human_alignment_normalized.empty:
         return []
 
     rows: list[dict[str, Any]] = []
     rng = np.random.default_rng(20260324)
-    grouped = normalized.groupby(["provider", "model", "round_index", "panel_id", "item_id"])
     human_dists = {
         (panel_id, item_id): {
             row.canonical_answer: row.probability
@@ -244,86 +247,112 @@ def _item_level_bootstrap(
         }
         for (panel_id, item_id), group in human.groupby(["panel_id", "item_id"])
     }
-    for (provider, model, round_index, panel_id, item_id), group in grouped:
+
+    cross_grouped = cross_lingual_normalized.groupby(["provider", "model", "round_index", "panel_id", "item_id"])
+    for (provider, model, round_index, panel_id, item_id), group in cross_grouped:
         lang_groups = {language: subset for language, subset in group.groupby("prompt_language")}
-        if "en" in lang_groups and "zh" in lang_groups:
-            en_answers = lang_groups["en"]["canonical_answer"].astype(str).to_numpy()
-            zh_answers = lang_groups["zh"]["canonical_answer"].astype(str).to_numpy()
-            if len(en_answers) and len(zh_answers):
-                jsd_values = []
-                tvd_values = []
-                spearman_values = []
-                for _ in range(resamples):
-                    en_draw = rng.choice(en_answers, size=len(en_answers), replace=True)
-                    zh_draw = rng.choice(zh_answers, size=len(zh_answers), replace=True)
-                    en_dist = distribution_from_answers(en_draw)
-                    zh_dist = distribution_from_answers(zh_draw)
-                    jsd_values.append(jsd(en_dist, zh_dist))
-                    tvd_values.append(tvd(en_dist, zh_dist))
-                    sp = spearman_frequency(en_dist, zh_dist)
-                    if sp is not None:
-                        spearman_values.append(sp)
-                for metric_name, metric_values in [
-                    ("jsd", jsd_values),
-                    ("tvd", tvd_values),
-                    ("spearman", spearman_values),
-                ]:
-                    if not metric_values:
-                        continue
-                    rows.append(
-                        {
-                            "scope": "item",
-                            "metric_family": "cross_lingual",
-                            "provider": provider,
-                            "model": model,
-                            "round_index": round_index,
-                            "panel_id": panel_id,
-                            "item_id": item_id,
-                            "prompt_language": "en_vs_zh",
-                            "metric": metric_name,
-                            "ci_low": float(np.quantile(metric_values, 0.025)),
-                            "ci_high": float(np.quantile(metric_values, 0.975)),
-                        }
-                    )
-        for prompt_language, subset in lang_groups.items():
-            llm_answers = subset["canonical_answer"].astype(str).to_numpy()
-            if len(llm_answers) == 0:
+        if "en" not in lang_groups or "zh" not in lang_groups:
+            continue
+        en_answers = lang_groups["en"]["coord_answer"].astype(str).to_numpy()
+        zh_answers = lang_groups["zh"]["coord_answer"].astype(str).to_numpy()
+        if len(en_answers) == 0 or len(zh_answers) == 0:
+            continue
+        jsd_values = []
+        tvd_values = []
+        spearman_values = []
+        for _ in range(resamples):
+            en_draw = rng.choice(en_answers, size=len(en_answers), replace=True)
+            zh_draw = rng.choice(zh_answers, size=len(zh_answers), replace=True)
+            en_dist = distribution_from_answers(en_draw)
+            zh_dist = distribution_from_answers(zh_draw)
+            jsd_values.append(jsd(en_dist, zh_dist))
+            tvd_values.append(tvd(en_dist, zh_dist))
+            sp = spearman_frequency(en_dist, zh_dist)
+            if sp is not None:
+                spearman_values.append(sp)
+        for metric_name, metric_values in [("jsd", jsd_values), ("tvd", tvd_values), ("spearman", spearman_values)]:
+            if not metric_values:
                 continue
-            human_dist = human_dists[(panel_id, item_id)]
-            jsd_values = []
-            tvd_values = []
-            spearman_values = []
-            for _ in range(resamples):
-                llm_draw = rng.choice(llm_answers, size=len(llm_answers), replace=True)
-                llm_dist = distribution_from_answers(llm_draw)
-                jsd_values.append(jsd(llm_dist, human_dist))
-                tvd_values.append(tvd(llm_dist, human_dist))
-                sp = spearman_frequency(llm_dist, human_dist)
-                if sp is not None:
-                    spearman_values.append(sp)
-            for metric_name, metric_values in [
-                ("jsd", jsd_values),
-                ("tvd", tvd_values),
-                ("spearman", spearman_values),
-            ]:
-                if not metric_values:
-                    continue
-                rows.append(
-                    {
-                        "scope": "item",
-                        "metric_family": "human_alignment",
-                        "provider": provider,
-                        "model": model,
-                        "round_index": round_index,
-                        "panel_id": panel_id,
-                        "item_id": item_id,
-                        "prompt_language": prompt_language,
-                        "metric": metric_name,
-                        "ci_low": float(np.quantile(metric_values, 0.025)),
-                        "ci_high": float(np.quantile(metric_values, 0.975)),
-                    }
-                )
+            rows.append(
+                {
+                    "scope": "item",
+                    "metric_family": "cross_lingual",
+                    "provider": provider,
+                    "model": model,
+                    "round_index": round_index,
+                    "panel_id": panel_id,
+                    "item_id": item_id,
+                    "prompt_language": "en_vs_zh",
+                    "metric": metric_name,
+                    "ci_low": float(np.quantile(metric_values, 0.025)),
+                    "ci_high": float(np.quantile(metric_values, 0.975)),
+                }
+            )
+
+    human_grouped = human_alignment_normalized.groupby(
+        ["provider", "model", "round_index", "panel_id", "item_id", "prompt_language"]
+    )
+    for (provider, model, round_index, panel_id, item_id, prompt_language), subset in human_grouped:
+        if (panel_id, item_id) not in human_dists:
+            continue
+        llm_answers = subset["canonical_answer"].astype(str).to_numpy()
+        if len(llm_answers) == 0:
+            continue
+        human_dist = human_dists[(panel_id, item_id)]
+        jsd_values = []
+        tvd_values = []
+        spearman_values = []
+        for _ in range(resamples):
+            llm_draw = rng.choice(llm_answers, size=len(llm_answers), replace=True)
+            llm_dist = distribution_from_answers(llm_draw)
+            jsd_values.append(jsd(llm_dist, human_dist))
+            tvd_values.append(tvd(llm_dist, human_dist))
+            sp = spearman_frequency(llm_dist, human_dist)
+            if sp is not None:
+                spearman_values.append(sp)
+        for metric_name, metric_values in [("jsd", jsd_values), ("tvd", tvd_values), ("spearman", spearman_values)]:
+            if not metric_values:
+                continue
+            rows.append(
+                {
+                    "scope": "item",
+                    "metric_family": "human_alignment",
+                    "provider": provider,
+                    "model": model,
+                    "round_index": round_index,
+                    "panel_id": panel_id,
+                    "item_id": item_id,
+                    "prompt_language": prompt_language,
+                    "metric": metric_name,
+                    "ci_low": float(np.quantile(metric_values, 0.025)),
+                    "ci_high": float(np.quantile(metric_values, 0.975)),
+                }
+            )
     return rows
+
+
+def _ensure_coord_answer(frame: pd.DataFrame) -> pd.DataFrame:
+    if "coord_answer" in frame.columns:
+        frame["coord_answer"] = frame["coord_answer"].fillna("").astype(str)
+        return frame
+
+    if "response_clean" in frame.columns:
+        frame["coord_answer"] = frame["response_clean"].fillna("").astype(str)
+    else:
+        frame["coord_answer"] = ""
+    if "response_validation_error" in frame.columns:
+        validation_error = frame["response_validation_error"].fillna("").astype(str).str.strip().str.lower()
+        valid_mask = validation_error.isin({"", "nan", "none"})
+        frame.loc[~valid_mask, "coord_answer"] = ""
+    return frame
+
+
+def _ensure_coord_answer_key(frame: pd.DataFrame) -> pd.DataFrame:
+    if "coord_answer_key" in frame.columns:
+        frame["coord_answer_key"] = frame["coord_answer_key"].fillna("").astype(str)
+        return frame
+    frame["coord_answer_key"] = frame["coord_answer"].fillna("").astype(str).map(make_match_key)
+    return frame
 
 
 def _round2_candidates(item_metrics: pd.DataFrame, round2_trigger: str) -> pd.DataFrame:
@@ -381,6 +410,8 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
                 len(deduped_rows),
             )
         normalized_all = pd.DataFrame(deduped_rows)
+    normalized_all = _ensure_coord_answer(normalized_all)
+    normalized_all = _ensure_coord_answer_key(normalized_all)
     normalized_all["canonical_answer"] = normalized_all["canonical_answer"].fillna("").astype(str)
 
     human = pd.read_csv(prepared_dir / "human_distributions.csv")
@@ -405,19 +436,34 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
 
     human_summary["consensus_bucket"] = human_summary["human_top1_probability"].map(bucketize)
 
-    cell_completeness = _cell_completeness(normalized_all, config)
+    cell_completeness = _cell_completeness(normalized_all, config, "canonical_answer")
     cell_completeness.to_csv(run_dir / "cell_completeness.csv", index=False)
+    coord_cell_completeness = _cell_completeness(normalized_all, config, "coord_answer_key")
+    coord_cell_completeness.to_csv(run_dir / "coord_cell_completeness.csv", index=False)
 
-    analysis_normalized = normalized_all[normalized_all["canonical_answer"] != ""].copy()
-    if not analysis_normalized.empty and not cell_completeness.empty:
-        analysis_normalized = analysis_normalized.merge(cell_completeness, on=CELL_KEYS, how="left")
-        analysis_normalized = analysis_normalized[analysis_normalized["is_complete"].fillna(False)].copy()
+    cross_lingual_normalized = normalized_all[normalized_all["coord_answer_key"] != ""].copy()
+    if not cross_lingual_normalized.empty and not coord_cell_completeness.empty:
+        cross_lingual_normalized = cross_lingual_normalized.merge(coord_cell_completeness, on=CELL_KEYS, how="left")
+        cross_lingual_normalized = cross_lingual_normalized[cross_lingual_normalized["is_complete"].fillna(False)].copy()
 
-    rows = _cross_lingual_rows(analysis_normalized, human_summary, cell_completeness) + _human_alignment_rows(
-        analysis_normalized,
+    human_alignment_normalized = normalized_all[normalized_all["canonical_answer"] != ""].copy()
+    if not human_alignment_normalized.empty and not cell_completeness.empty:
+        human_alignment_normalized = human_alignment_normalized.merge(cell_completeness, on=CELL_KEYS, how="left")
+        human_alignment_normalized = human_alignment_normalized[
+            human_alignment_normalized["is_complete"].fillna(False)
+        ].copy()
+
+    rows = _cross_lingual_rows(
+        cross_lingual_normalized,
+        human_summary,
+        coord_cell_completeness,
+        answer_column="coord_answer_key",
+    ) + _human_alignment_rows(
+        human_alignment_normalized,
         human,
         human_summary,
         cell_completeness,
+        answer_column="canonical_answer",
     )
     item_metrics = pd.DataFrame(rows, columns=ITEM_METRIC_COLUMNS)
     if not item_metrics.empty:
@@ -480,7 +526,12 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
                 }
             )
     bootstrap_rows.extend(
-        _item_level_bootstrap(analysis_normalized, human, config.analysis.item_bootstrap_resamples)
+        _item_level_bootstrap(
+            cross_lingual_normalized,
+            human_alignment_normalized,
+            human,
+            config.analysis.item_bootstrap_resamples,
+        )
     )
     pd.DataFrame(bootstrap_rows, columns=BOOTSTRAP_COLUMNS).to_csv(run_dir / "bootstrap_intervals.csv", index=False)
 
@@ -492,6 +543,18 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
     manifest["cell_completion_threshold"] = config.analysis.min_cell_completion_rate
     manifest["complete_cell_count"] = int(cell_completeness["is_complete"].sum()) if not cell_completeness.empty else 0
     manifest["incomplete_cell_count"] = int((~cell_completeness["is_complete"]).sum()) if not cell_completeness.empty else 0
+    manifest["complete_cell_count_human_alignment"] = (
+        int(cell_completeness["is_complete"].sum()) if not cell_completeness.empty else 0
+    )
+    manifest["incomplete_cell_count_human_alignment"] = (
+        int((~cell_completeness["is_complete"]).sum()) if not cell_completeness.empty else 0
+    )
+    manifest["complete_cell_count_cross_lingual"] = (
+        int(coord_cell_completeness["is_complete"].sum()) if not coord_cell_completeness.empty else 0
+    )
+    manifest["incomplete_cell_count_cross_lingual"] = (
+        int((~coord_cell_completeness["is_complete"]).sum()) if not coord_cell_completeness.empty else 0
+    )
     manifest["item_metric_count"] = int(item_metrics.shape[0])
     manifest["round2_candidate_count"] = int(round2_candidates.shape[0])
     if item_metrics.empty:

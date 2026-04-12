@@ -30,8 +30,8 @@
 | `results/all_valid_models_report_*.md` | `results/reports/all_valid_models_report_*.md` |
 | `results/full_model_report_*.md` | `results/reports/full_model_report_*.md` |
 | `results/qwen_experiment_report_*.md` | `results/reports/qwen_experiment_report_*.md` |
-| `results/20260324T134951Z/` | `results/runs/20260324T134951Z/` |
-| `results/runs-gemini-2.5-flash/` | `results/runs/runs-gemini-2.5-flash/` |
+| `results/20260324T134951Z/` | `results/previous/runs/20260324T134951Z/` |
+| `results/runs-gemini-2.5-flash/` | `results/previous/runs/runs-gemini-2.5-flash/` |
 
 新增：
 - `results/README.md`：说明新目录语义与命名规则。
@@ -83,3 +83,49 @@
 - `tools/auto_gen_aliases.py`
   - 原来：`run_id` 写死、路径写死。
   - 现在：支持 `--run-id`、`--run-root`、`--alias-file` 参数，可复用。
+
+## 6) 后续补充更新（同日追加）
+
+本节补齐重构后继续完成、但此前未完整写入本文件的变更。
+
+### 6.1 Risk 驱动代码修复（对应 `docs/risks/RAW_DATA_AND_RISKS.md`）
+
+- 已落地并记录：
+  - `allow_unmapped` 默认收紧为 `false`（配置与默认值统一）。
+  - `round2_trigger` 支持 `cross_lingual_top1_mismatch` / `human_top1_mismatch` / `either_top1_mismatch`。
+  - alias 自动同步 + `alias_coverage_report.csv` + unresolved 最近邻建议字段。
+  - `prepare.py` 增加 schema 校验、CSV 数据起始检测、prompt 提取审计。
+  - `sampling.item_ids` 子集支持、`max_enabled_providers` 单 run provider 保护。
+  - `human_alignment` 的 `flip_rate` 语义修正（改为空值，bootstrap 不再计算该项）。
+  - bucket 图扩展为 `JSD + top1 + flip`，item-level bootstrap 扩展为 `JSD + TVD + Spearman`。
+
+### 6.2 Alias 并入与复跑对比（gpt-5.4 recheck4）
+
+- 基于 unresolved 建议项并入 alias 后，目标 run `20260412T043325Z`：
+  - unresolved：`136 -> 30`（剩余主要为 `study2_item_04` 的 `house/church`）。
+- 并补做 old/new alias 回放对比：
+  - `artifacts/reanalysis/20260412_alias_replay_v2/alias_replay_comparison.json`
+  - 用于验证“同一 raw 下 alias 变化会显著改变可分析集合与指标”。
+
+### 6.3 Temperature 扩展实验分类（主验 vs 探索）
+
+- 新增并明确分类：
+  - 主验证：`temp=1.0`
+  - 探索：`temp=0.2`、`temp=1.2`
+- 统一记录在：
+  - `results/reports/post_code_update_gpt54_temperature_runs_20260412.md`
+- 并将对应 run 镜像到：
+  - `results/runs_s50/temp_test_20260412_gpt5.4/`
+
+### 6.4 备份目录（旧临时结构归档）
+
+- 将临时/探索用配置与日志归档到：
+  - `backup/legacy_unorganized_20260412/`
+- 清单见：
+  - `backup/legacy_unorganized_20260412/notes/BACKUP_MANIFEST.md`
+
+### 6.5 关于“写全”的边界
+
+- 本文件以“结构与关键迁移”为主线；
+- 风险点实现细节以 `docs/risks/RAW_DATA_AND_RISKS.md` 为准；
+- 温度实验主验/探索结论以 `results/reports/post_code_update_gpt54_temperature_runs_20260412.md` 为准。

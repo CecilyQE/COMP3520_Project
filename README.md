@@ -6,7 +6,9 @@ It supports:
 - OSF source data fetch + panel preparation
 - EN/ZH matched prompting with fixed answer language
 - answer normalization against human canonical distributions
-- cross-lingual + human-alignment metrics
+- dual-track metrics:
+  - cross-lingual coordination from `coord_answer_key` (case/space/punctuation folded + alias harmonized, not gated by human/fuzzy mapping)
+  - human-alignment from human-mapped `canonical_answer`
 - round-2 re-coordination candidate generation
 
 ## Quick Start
@@ -54,6 +56,7 @@ coordbench run-all --config configs/study2_british_en_zh.yaml
 
 Or use `run-all` to run 4–7 end-to-end.
 
+
 ## Config Conventions
 
 - Default panel: `study2_british_within`
@@ -97,6 +100,8 @@ Or use `run-all` to run 4–7 end-to-end.
 - `raw_generations.jsonl`
 - `normalized_outputs.csv`
 - `unresolved_queue.csv`
+- `cell_completeness.csv` (human-alignment track)
+- `coord_cell_completeness.csv` (cross-lingual track)
 - `item_metrics.csv`
 - `summary_metrics.json`
 - `bootstrap_intervals.csv`
@@ -106,12 +111,8 @@ Or use `run-all` to run 4–7 end-to-end.
 ### Experiment reports
 
 `results/` is organized by experiment type:
-- `results/full_experiments/indexes/`
-- `results/full_experiments/summaries/`
-- `results/stability_probes/`
-- `results/concurrency_sweeps/`
-- `results/reports/`
-- `results/runs/` (archived legacy run folders)
+- `results/previous/` (archived historical results by experiment type)
+- `results/runs_s50/` (curated post-code-update 50-sample run folders)
 
 See `results/README.md` for naming conventions.
 

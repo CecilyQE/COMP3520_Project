@@ -98,6 +98,9 @@ def completed_request_ids(raw_path: Path) -> set[str]:
     for record in read_jsonl(raw_path):
         if record_is_complete(record):
             identities.add(request_identity_from_record(record))
+            # Keep backward-compatible resume behavior when cache-key construction
+            # changes between versions: also index by stable fallback identity.
+            identities.add(request_fallback_identity_from_mapping(record))
     return identities
 
 

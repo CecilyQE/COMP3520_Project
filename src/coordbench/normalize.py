@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,13 @@ from coordbench.utils.files import read_json, read_jsonl, write_json
 from coordbench.utils.text import clean_surface, extract_first_answer_line, make_match_key
 
 LOGGER = logging.getLogger(__name__)
+MOUNT_PREFIXES = {"mount", "mt", "mountain"}
+PERSON_OVERLAP_ITEM_IDS = {
+    "study2_item_02",
+    "study2_item_03",
+    "study2_item_08",
+    "study2_item_12",
+}
 
 
 def _load_aliases(path: Path) -> pd.DataFrame:
@@ -107,6 +115,29 @@ def _alias_coverage_report(
     return pd.DataFrame(rows).sort_values(["panel_id", "item_id"]).reset_index(drop=True)
 
 
+def _coord_key(response_clean: str, item_id: str) -> str:
+    text = clean_surface(str(response_clean or ""))
+    if not text:
+        return ""
+
+    tokens = re.findall(r"[A-Za-z0-9]+", text)
+    if not tokens:
+        return make_match_key(text)
+
+    lowered = [token.lower() for token in tokens]
+    if lowered and lowered[0] in MOUNT_PREFIXES and len(tokens) > 1:
+        tokens = tokens[1:]
+        lowered = lowered[1:]
+
+    if str(item_id) in PERSON_OVERLAP_ITEM_IDS:
+        alpha_tokens = [token for token in tokens if token.isalpha()]
+        if len(alpha_tokens) >= 2:
+            # Treat full-name/last-name variants as the same coordination focal point.
+            return make_match_key(alpha_tokens[-1])
+
+    return make_match_key(" ".join(tokens))
+
+
 def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
     config = load_config(config_path)
     run_dir = resolve_run_dir(config.outputs.run_root, run_id)
@@ -159,6 +190,8 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
         panel_id = row["panel_id"]
         item_id = row["item_id"]
         answer_key = row["answer_key"]
+        coord_answer = ""
+        coord_answer_key = ""
         canonical_answer = ""
         status = "invalid"
         validation_error_raw = row.get("response_validation_error")
@@ -169,6 +202,8 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
             validation_error = validation_error_text
 
         if not validation_error and answer_key:
+            coord_answer = row["response_clean"]
+            coord_answer_key = _coord_key(coord_answer, item_id)
             alias_matches = aliases[
                 ((aliases["panel_id"].fillna("") == panel_id) | (aliases["panel_id"].fillna("") == ""))
                 & ((aliases["item_id"].fillna("") == item_id) | (aliases["item_id"].fillna("") == ""))
@@ -176,6 +211,7 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
             ]
             if not alias_matches.empty:
                 canonical_answer = str(alias_matches.iloc[0]["canonical_answer"])
+                coord_answer_key = make_match_key(canonical_answer)
                 status = "alias"
             elif (panel_id, item_id, answer_key) in human_lookup:
                 canonical_answer = human_lookup[(panel_id, item_id, answer_key)]
@@ -214,6 +250,8 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
 
         normalized = {
             **row,
+            "coord_answer": coord_answer,
+            "coord_answer_key": coord_answer_key,
             "canonical_answer": canonical_answer,
             "normalization_status": status,
             "closest_human_answer_key": closest_human_key,

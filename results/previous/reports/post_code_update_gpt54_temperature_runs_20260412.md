@@ -15,12 +15,12 @@ This note records the run classification after the code/risk fixes and the artif
 
 - **Main evaluation (for primary reporting)**:
   - `temp=1.0`
-  - `results/runs/post_code_update_20260412/temp1.0_main_eval_20260412T043325Z`
+  - `results/runs_s50/temp_test_20260412_gpt5.4/temp1.0_main_eval_20260412T043325Z`
 - **Exploratory only (sensitivity check, not primary table)**:
   - `temp=0.2`
-  - `results/runs/post_code_update_20260412/temp0.2_exploratory_20260412T052251Z`
+  - `results/runs_s50/temp_test_20260412_gpt5.4/temp0.2_exploratory_20260412T052251Z`
   - `temp=1.2`
-  - `results/runs/post_code_update_20260412/temp1.2_exploratory_20260412T052251Z`
+  - `results/runs_s50/temp_test_20260412_gpt5.4/temp1.2_exploratory_20260412T052251Z`
 
 ## Key R1 Metrics
 
@@ -34,4 +34,4 @@ This note records the run classification after the code/risk fixes and the artif
 
 - `run-all` for `temp=0.2/1.2` stopped at normalize due `allow_unmapped: false`; `analyze` was then run explicitly on completed raw+normalized outputs.
 - Remaining unresolved rows are the known `study2_item_04` (`house/church`) bucket.
-- Artifacts were mirrored from `artifacts/full_experiments/...` to `results/runs/post_code_update_20260412/...` to keep reporting assets centralized.
+- Artifacts were mirrored from `artifacts/full_experiments/...` to `results/runs_s50/temp_test_20260412_gpt5.4/...` to keep reporting assets centralized.

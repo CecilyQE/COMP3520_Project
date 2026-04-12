@@ -69,7 +69,7 @@
 - **2026-04-11 已修改**：默认值已调整为更保守口径。
   - `src/coordbench/config.py` 中 `allow_unmapped` 缺省从 `true` 改为 `false`。
   - `configs/study2_british_en_zh.yaml` 与 `configs/universal_api_full.yaml` 的 `allow_unmapped` 已从 `true` 改为 `false`。
-- **实测证据（2026-04-10 核查）**：`results/runs/runs-gemini-2.5-flash/20260401T075525Z/normalized_outputs.csv` 出现 `unmapped=49/1000`；按语言 EN `10/500`，ZH `39/500`（ZH 侧更高）。
+- **实测证据（2026-04-10 核查）**：`results/previous/runs/runs-gemini-2.5-flash/20260401T075525Z/normalized_outputs.csv` 出现 `unmapped=49/1000`；按语言 EN `10/500`，ZH `39/500`（ZH 侧更高）。
 
 ### 4.2 【高】`default_aliases.csv` 与 **Raw 表面形式** 是否同步
 
@@ -142,7 +142,7 @@
   - `human_top1_mismatch`（Type2）
   - `either_top1_mismatch`（Type1 ∪ Type2）
   同时新增测试 `tests/test_normalize_analysis.py::test_round2_candidates_respect_configured_trigger` 覆盖上述分支。
-- **实测证据（2026-04-10 核查）**：`results/runs/runs-gemini-2.5-flash/20260401T075525Z/round2_candidates.csv` 为 5 项，触发来源与现有硬编码一致（Type1）。
+- **实测证据（2026-04-10 核查）**：`results/previous/runs/runs-gemini-2.5-flash/20260401T075525Z/round2_candidates.csv` 为 5 项，触发来源与现有硬编码一致（Type1）。
 
 ### 5.4 【低–中】指标列语义
 
@@ -173,6 +173,25 @@ Item 层 bootstrap 代码对 **JSD** 有较完整区间；若正文承诺 **TVD 
   - `src/coordbench/analysis.py::_item_level_bootstrap()` 现在同时为 cross-lingual 与 human-alignment 产出 `metric in {jsd,tvd,spearman}` 的区间行。
   - `spearman` 在抽样分布支撑不足时自动跳过，避免写入伪区间。
 
+### 5.8 【中】Cross-lingual 与 Human-alignment 的门控耦合
+
+- Proposal 中 `A. Cross-Lingual Consistency` 是 **LLM 内部一致性**，不应被人类映射成功率直接门控。
+- 历史实现会先过滤 `canonical_answer == ""` 再计算两类指标，导致 cross-lingual 也受 human/alias 映射质量影响。
+- **2026-04-12 已修改为双轨**：
+  - `src/coordbench/normalize.py` 新增 `coord_answer` 字段：仅基于有效模型输出的清洗答案，用于 cross-lingual 轨道。
+  - `src/coordbench/analysis.py` 分离两套 completeness：
+    - `coord_cell_completeness.csv`：用于 `cross_lingual`（基于 `coord_answer`）。
+    - `cell_completeness.csv`：用于 `human_alignment`（基于 `canonical_answer`）。
+  - `item_metrics.csv` 仍统一输出两类指标，但其进入条件分别来自对应轨道，不再共享同一门控。
+  - `run_manifest.json` 新增：
+    - `complete_cell_count_cross_lingual` / `incomplete_cell_count_cross_lingual`
+    - `complete_cell_count_human_alignment` / `incomplete_cell_count_human_alignment`
+- **2026-04-12 进一步更新（同义词同步）**：
+  - cross-lingual 主键从 `coord_answer` 进一步收敛为 `coord_answer_key`（大小写/空格/标点统一）。
+  - `normalize.py` 在 alias 命中时，将 `coord_answer_key` 同步到 alias 对应 canonical key（例如 `pound sterling -> pound`）。
+  - `coord_answer_key` 规则新增轻量语义归并：`mount/mt/mountain` 前缀可省略；在人物题（如 `study2_item_02/03/08/12`）中，全名与姓氏按姓聚合。
+  - 该同步仅用于 coordination 轨道的“同义词对齐”，不引入 `human_key/fuzzy` 的门控语义，仍保持 Proposal 中 LLM-internal consistency 的独立性。
+
 ---
 
 ## 6. 建议的检查清单（小组内部）
@@ -183,4 +202,4 @@ Item 层 bootstrap 代码对 **JSD** 有较完整区间；若正文承诺 **TVD 
 4. **RQ1/RQ2**：指标是否按 **prompt 语言** 与 **跨语** 分行报告，不混表。  
 5. **RQ3**：正文触发条件与代码 **Type1/Type2** 一致。  
 6. **Prepare**：Study1/2/3 CSV 与当前 OSF 文件 **列名、行偏移** 是否仍匹配（升级 raw 后必查）。
-7. **路径口径**：Methods 明确使用的 run 根目录与证据文件（默认 `outputs.run_root=../artifacts/runs`；仓库历史结果已归档到 `results/runs/...`）。
+7. **路径口径**：Methods 明确使用的 run 根目录与证据文件（默认 `outputs.run_root=../artifacts/runs`；历史结果在 `results/previous/...`，近期 50-sample 归档在 `results/runs_s50/...`）。
