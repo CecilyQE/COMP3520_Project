@@ -1,6 +1,6 @@
 providers:
   anthropic:
-    enabled: true
+    enabled: false
     model: ${ANTHROPIC_MODEL}
     api_key_env: ANTHROPIC_AUTH_TOKEN
     concurrency: 3
@@ -20,7 +20,7 @@ providers:
     temperature: 1.0
     max_output_tokens: 24
   gemini:
-    enabled: true
+    enabled: false
     model: ${GEMINI_MODEL}
     api_key_env: GEMINI_API_KEY
     concurrency: 3
@@ -28,7 +28,7 @@ providers:
     temperature: 1.0
     max_output_tokens: 24
   deepseek:
-    enabled: true
+    enabled: false
     model: ${DEEPSEEK_MODEL}
     api_key_env: DEEPSEEK_API_KEY
     concurrency: 3
@@ -40,6 +40,7 @@ sampling:
   panel_id: study2_british_within
   answer_language: English
   prompt_languages: [en, zh]
+  max_enabled_providers: 1
   round1_samples: 30
   round2_samples: 10
   enable_round2: true
@@ -48,7 +49,7 @@ sampling:
 
 normalization:
   alias_path: ../data/aliases/default_aliases.csv
-  allow_unmapped: true
+  allow_unmapped: false
   fuzzy_match_threshold: 95
 
 analysis:

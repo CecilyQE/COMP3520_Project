@@ -38,6 +38,7 @@ def test_load_config_env_expansion(tmp_path: Path, monkeypatch):
                 "  panel_id: study2_british_within",
                 "  answer_language: English",
                 "  prompt_languages: [en, zh]",
+                "  item_ids: [study2_item_01, study2_item_03]",
                 "  round1_samples: 2",
                 "  round2_samples: 1",
                 "  enable_round2: true",
@@ -55,3 +56,4 @@ def test_load_config_env_expansion(tmp_path: Path, monkeypatch):
     )
     config = load_config(config_path)
     assert config.providers["openai"].model == "test-openai-model"
+    assert config.sampling.item_ids == ["study2_item_01", "study2_item_03"]

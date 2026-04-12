@@ -68,6 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     sampling_parser.add_argument("--config", required=True)
     sampling_parser.add_argument("--run-id", default=None)
     sampling_parser.add_argument("--round", type=int, default=1)
+    sampling_parser.add_argument(
+        "--item-ids",
+        default=None,
+        help="Optional comma-separated item ids to sample (overrides config item_ids for this call).",
+    )
 
     normalize_parser = subparsers.add_parser("normalize", help="Normalize a run against the human benchmark.")
     normalize_parser.add_argument("--config", required=True)
@@ -110,7 +115,10 @@ def main() -> None:
 
     if args.command == "run-sampling":
         run_dir = _resolve_run_dir(args.config, args.run_id) if args.run_id else None
-        created = run_sampling(args.config, run_dir=run_dir, round_index=args.round)
+        item_ids = None
+        if args.item_ids:
+            item_ids = [item.strip() for item in str(args.item_ids).split(",") if item.strip()]
+        created = run_sampling(args.config, run_dir=run_dir, round_index=args.round, item_ids=item_ids)
         print(created)
         return
 

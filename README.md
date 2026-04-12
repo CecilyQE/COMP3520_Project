@@ -1,47 +1,35 @@
-# CoordBench
+# CoordBench (COMP3520 Project)
 
-CoordBench is a self-sufficient Python research pipeline for studying cross-lingual robustness in tacit coordination tasks with LLMs.
+CoordBench is a reproducible benchmark pipeline for evaluating cross-lingual robustness of tacit coordination in LLMs, with human-reference metrics.
 
-It downloads the Perez-Zapata et al. OSF source files itself, reconstructs benchmark-ready human panels, profiles the dataset, samples real models from OpenAI, Gemini, DeepSeek, and Anthropic-compatible endpoints, normalizes outputs against human response distributions, and produces metrics plus plots for research reporting.
+It supports:
+- OSF source data fetch + panel preparation
+- EN/ZH matched prompting with fixed answer language
+- answer normalization against human canonical distributions
+- cross-lingual + human-alignment metrics
+- round-2 re-coordination candidate generation
 
-## What It Does
+## Quick Start
 
-- Downloads the public OSF source data for the coordination studies into versioned snapshots.
-- Reconstructs participant-level and aggregated human benchmark panels from the raw Qualtrics exports.
-- Profiles all prepared panels and recommends a default benchmark panel.
-- Runs matched English and Chinese prompt variants while holding answer language fixed.
-- Normalizes LLM answers against human canonical answer inventories with alias and fuzzy matching support.
-- Computes cross-lingual and human-alignment metrics, bootstrap intervals, round-2 candidate items, and publication-friendly plots.
-
-## Source Data
-
-The default source is the public OSF project for:
-
-- Perez-Zapata et al., *Three International Studies on Pure Coordination Games: Adaptable Solutions When Intuitions are Presumed to Vary*.
-- OSF project: [https://osf.io/fv47d/](https://osf.io/fv47d/)
-- Accepted manuscript referenced while building this repo: [https://pure-oai.bham.ac.uk/ws/portalfiles/portal/277920622/AcceptedVersionJEPGeneralAlignmentPaper_09.09.2025_.pdf](https://pure-oai.bham.ac.uk/ws/portalfiles/portal/277920622/AcceptedVersionJEPGeneralAlignmentPaper_09.09.2025_.pdf)
-
-The first official benchmark config defaults to `study2_british_within`.
-
-## Setup
+1. Install:
 
 ```bash
 pip install -e .[dev]
 ```
 
-Create a `.env` from `.env.example` and fill in:
+2. Configure `.env` from `.env.example`:
+- `OPENAI_API_KEY`, `OPENAI_MODEL`
+- `GEMINI_API_KEY`, `GEMINI_MODEL`
+- `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`
+- `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`
 
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `GEMINI_API_KEY`
-- `GEMINI_MODEL`
-- `DEEPSEEK_API_KEY`
-- `DEEPSEEK_MODEL`
-- `ANTHROPIC_AUTH_TOKEN`
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_MODEL` (`claude-opus-4-6` is the default example)
+3. Run full pipeline with default benchmark config:
 
-## Main Commands
+```bash
+coordbench run-all --config configs/study2_british_en_zh.yaml
+```
+
+## Core CLI
 
 ```bash
 coordbench fetch-source-data
@@ -54,28 +42,46 @@ coordbench plot --config configs/study2_british_en_zh.yaml --run-id <run_id>
 coordbench run-all --config configs/study2_british_en_zh.yaml
 ```
 
-For a quicker smoke pass, use:
+## Standard Workflow
 
-```bash
-coordbench run-all --config configs/demo.yaml
-```
+1. `fetch-source-data`
+2. `prepare-human-panels`
+3. `profile-dataset`
+4. `run-sampling`
+5. `normalize`
+6. `analyze`
+7. `plot`
 
-For an Anthropic-compatible smoke run:
+Or use `run-all` to run 4–7 end-to-end.
 
-```bash
-coordbench run-sampling --config configs/anthropic_smoke.yaml
-```
+## Config Conventions
 
-For a full Anthropic-only research run on the default panel:
+- Default panel: `study2_british_within`
+- Default prompt languages: `en`, `zh`
+- Default answer language: `English`
+- Normalization default: `allow_unmapped: false`
+- Round-2 trigger supports:
+  - `cross_lingual_top1_mismatch`
+  - `human_top1_mismatch`
+  - `either_top1_mismatch`
 
-```bash
-coordbench run-all --config configs/study2_british_anthropic_en_zh.yaml
-```
+## Repository Layout
 
-## Important Outputs
+- `src/coordbench/`: package source code
+- `tests/`: unit/integration tests
+- `configs/`: benchmark and provider configs
+- `scripts/`: experiment runners and monitors
+- `scripts/debug/`: ad-hoc debugging scripts
+- `tools/`: one-off utility scripts
+- `docs/proposal/`: proposal files
+- `docs/risks/`: risk/method notes
+- `docs/updates/`: repository update logs
 
-Prepared dataset artifacts live under `data/prepared/<snapshot_id>/` and include:
+## Output Layout
 
+### Prepared data
+
+`data/prepared/<snapshot_id>/`:
 - `participant_responses.csv`
 - `human_distributions.csv`
 - `panel_items.csv`
@@ -84,8 +90,9 @@ Prepared dataset artifacts live under `data/prepared/<snapshot_id>/` and include
 - `selection_report.md`
 - `benchmark_manifest.json`
 
-Run artifacts live under `artifacts/runs/<run_id>/` and include:
+### Run artifacts
 
+`artifacts/runs/<run_id>/`:
 - `run_manifest.json`
 - `raw_generations.jsonl`
 - `normalized_outputs.csv`
@@ -96,24 +103,34 @@ Run artifacts live under `artifacts/runs/<run_id>/` and include:
 - `round2_candidates.csv`
 - `plots/`
 
-## Notes
+### Experiment reports
 
-- The default configs set `allow_unmapped: true` so the pipeline can complete even if a model produces novel answers. For publication-tight runs, expand the alias file and switch this to `false`.
-- Round 2 is triggered from round-1 cross-lingual top-1 mismatches and is run automatically by `run-all` when candidates are found.
-- Dataset preparation currently reconstructs:
-  - `study1_british_within`
-  - `study1_global_within`
-  - `study2_british_within`
-  - `study2_british_between`
-  - `study2_south_african_within`
-  - `study2_south_african_between`
-  - `study3_chilean_within`
-  - `study3_chilean_between`
-  - `study3_south_african_within`
-  - `study3_south_african_between`
+`results/` is organized by experiment type:
+- `results/full_experiments/indexes/`
+- `results/full_experiments/summaries/`
+- `results/stability_probes/`
+- `results/concurrency_sweeps/`
+- `results/reports/`
+- `results/runs/` (archived legacy run folders)
+
+See `results/README.md` for naming conventions.
+
+## Script Entry Points
+
+- Full multi-model experiments: `scripts/run_new_models_full_experiments.py`
+- Single full experiment: `scripts/run_one_full_experiment.py`
+- Universal full experiments: `scripts/run_universal_full_experiments.py`
+- Stability probe: `scripts/run_model_stability_probe.py`
+- Concurrency sweep: `scripts/run_universal_concurrency_sweep.py`
+- Monitoring: `scripts/watch_full_experiment_status.py`, `scripts/monitor_token_usage.py`
 
 ## Tests
 
 ```bash
-pytest
+pytest -q
 ```
+
+## Source Data
+
+- OSF project: https://osf.io/fv47d/
+- Perez-Zapata et al., *Three International Studies on Pure Coordination Games*

@@ -19,7 +19,8 @@ class OpenAIProvider(BaseProvider):
         ).rstrip("/")
         self.timeout_seconds = int(config.timeout_seconds)
         self.session = requests.Session()
-        self.session.trust_env = False
+        trust_env_raw = str(config.extra.get("trust_env", os.environ.get("OPENAI_TRUST_ENV", "true"))).strip().lower()
+        self.session.trust_env = trust_env_raw not in {"0", "false", "no", "off"}
 
     def _json_response(self, request: GenerationRequest, response: requests.Response, latency: float) -> GenerationResponse:
         payload = response.json()
@@ -59,7 +60,7 @@ class OpenAIProvider(BaseProvider):
                 {"role": "user", "content": request.user_prompt},
             ],
             "temperature": request.temperature,
-            "max_tokens": request.max_output_tokens,
+            "max_completion_tokens": request.max_output_tokens,
             "stream": True,
         }
         response = self.session.post(

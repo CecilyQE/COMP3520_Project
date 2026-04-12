@@ -17,7 +17,7 @@ from coordbench.runner import run_sampling
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "configs" / "universal_api_openai.yaml"
 ARTIFACT_ROOT = REPO_ROOT / "artifacts" / "sweeps"
-RESULTS_ROOT = REPO_ROOT / "results"
+RESULTS_ROOT = REPO_ROOT / "results" / "concurrency_sweeps"
 
 PHASE1_CONCURRENCY = [2, 4, 6]
 PHASE2_CONCURRENCY = [8, 10]
@@ -456,6 +456,7 @@ def main() -> int:
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%SZ")
     sweep_dir = ARTIFACT_ROOT / timestamp
     sweep_dir.mkdir(parents=True, exist_ok=True)
+    RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
     results_path = sweep_dir / "results.json"
 
     rows = _load_existing_results(results_path)

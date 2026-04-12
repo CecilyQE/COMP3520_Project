@@ -67,7 +67,11 @@ def plot_run(config_path: str | Path, run_id: str | Path) -> Path:
 
         consensus = (
             cross.groupby(["consensus_bucket", "provider", "model", "round_index"])
-            .agg(mean_jsd=("jsd", "mean"))
+            .agg(
+                mean_jsd=("jsd", "mean"),
+                mean_top1_match=("top1_match", "mean"),
+                mean_flip_rate=("flip_rate", "mean"),
+            )
             .reset_index()
         )
         if not consensus.empty:
@@ -81,6 +85,25 @@ def plot_run(config_path: str | Path, run_id: str | Path) -> Path:
             fig.tight_layout()
             fig.savefig(plots_dir / "consensus_bucket.png", dpi=200)
             fig.savefig(plots_dir / "consensus_bucket.pdf")
+            plt.close(fig)
+
+            fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+            for label, subset in consensus.groupby("label"):
+                axes[0].plot(subset["consensus_bucket"], subset["mean_jsd"], marker="o", label=label)
+                axes[1].plot(subset["consensus_bucket"], subset["mean_top1_match"], marker="o", label=label)
+                axes[2].plot(subset["consensus_bucket"], subset["mean_flip_rate"], marker="o", label=label)
+            axes[0].set_title("Bucket vs JSD")
+            axes[0].set_ylabel("Mean JSD")
+            axes[1].set_title("Bucket vs Top-1 Match")
+            axes[1].set_ylabel("Mean Top-1 Match")
+            axes[2].set_title("Bucket vs Flip Rate")
+            axes[2].set_ylabel("Mean Flip Rate")
+            for axis in axes:
+                axis.set_xlabel("Consensus Bucket")
+            axes[0].legend(fontsize=8)
+            fig.tight_layout()
+            fig.savefig(plots_dir / "consensus_bucket_metrics.png", dpi=200)
+            fig.savefig(plots_dir / "consensus_bucket_metrics.pdf")
             plt.close(fig)
 
         if cross["round_index"].nunique() > 1:

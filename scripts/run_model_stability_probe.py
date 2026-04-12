@@ -24,7 +24,7 @@ from coordbench.run_state import latest_prepared_snapshot_or_raise
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "configs" / "universal_api_openai.yaml"
 ARTIFACT_ROOT = REPO_ROOT / "artifacts" / "stability_probes"
-RESULTS_ROOT = REPO_ROOT / "results"
+RESULTS_ROOT = REPO_ROOT / "results" / "stability_probes"
 DEFAULT_ITEM_COUNT = 5
 DEFAULT_CONCURRENCY_LEVELS = [1, 2, 4]
 

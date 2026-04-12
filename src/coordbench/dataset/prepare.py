@@ -27,6 +27,31 @@ def _read_csv_rows(path: Path) -> tuple[list[str], list[list[str]]]:
     return rows[0], rows[1:]
 
 
+def _require_columns(header: list[str], required: list[str], source_name: str) -> None:
+    missing = [column for column in required if column not in header]
+    if missing:
+        raise ValueError(f"{source_name} missing required columns: {missing}")
+
+
+def _find_data_start(
+    rows: list[list[str]],
+    header_index: dict[str, int],
+    id_column: str,
+    *,
+    skip_rows: int,
+) -> list[list[str]]:
+    if len(rows) <= skip_rows:
+        return []
+    for offset in range(skip_rows, len(rows)):
+        row = rows[offset]
+        if header_index[id_column] >= len(row):
+            continue
+        identifier = clean_surface(row[header_index[id_column]])
+        if identifier and identifier.lower() not in {"responseid", "nan"}:
+            return rows[offset:]
+    return rows[skip_rows:]
+
+
 def _docx_lines(path: Path) -> list[str]:
     with zipfile.ZipFile(path) as archive:
         xml = archive.read("word/document.xml").decode("utf-8", errors="replace")
@@ -72,7 +97,7 @@ def _normalize_population(value: str) -> str:
     return aliases.get(lowered, lowered)
 
 
-def _extract_prompt_from_raw(value: str, item_table: dict[int, str], item_number: int) -> str:
+def _extract_prompt_from_raw_with_reason(value: str, item_table: dict[int, str], item_number: int) -> tuple[str, str]:
     raw_key = make_match_key(value)
 
     def canonical_prompt(prompt: str) -> str:
@@ -92,7 +117,7 @@ def _extract_prompt_from_raw(value: str, item_table: dict[int, str], item_number
     if "namea" in raw_key:
         slug = raw_key[raw_key.rfind("namea") :]
         if slug in alias_lookup:
-            return alias_lookup[slug]
+            return alias_lookup[slug], "slug_alias_exact"
 
         candidates = [
             canonical
@@ -100,7 +125,7 @@ def _extract_prompt_from_raw(value: str, item_table: dict[int, str], item_number
             if alias_key and (alias_key in slug or slug in alias_key)
         ]
         if candidates:
-            return max(candidates, key=lambda prompt: len(make_match_key(prompt)))
+            return max(candidates, key=lambda prompt: len(make_match_key(prompt))), "slug_alias_fuzzy"
 
     candidates = [
         canonical_prompt(prompt)
@@ -108,15 +133,19 @@ def _extract_prompt_from_raw(value: str, item_table: dict[int, str], item_number
         if make_match_key(prompt) in raw_key or raw_key.endswith(make_match_key(prompt))
     ]
     if candidates:
-        return max(candidates, key=lambda prompt: len(make_match_key(prompt)))
+        return max(candidates, key=lambda prompt: len(make_match_key(prompt))), "table_match"
     fallback = item_table.get(item_number)
     if fallback:
-        return canonical_prompt(fallback)
+        return canonical_prompt(fallback), "item_number_fallback"
     match = re.search(r"(name.+)$", clean_surface(value), flags=re.IGNORECASE)
     if match:
         fallback_text = prettify_prompt(match.group(1).rstrip(".:"))
-        return alias_lookup.get(make_match_key(fallback_text), fallback_text)
-    return f"Item {item_number}"
+        return alias_lookup.get(make_match_key(fallback_text), fallback_text), "regex_fallback"
+    return f"Item {item_number}", "generic_item_fallback"
+
+
+def _extract_prompt_from_raw(value: str, item_table: dict[int, str], item_number: int) -> str:
+    return _extract_prompt_from_raw_with_reason(value, item_table, item_number)[0]
 
 
 def _human_canonical_map(frame: pd.DataFrame) -> pd.DataFrame:
@@ -143,6 +172,10 @@ def _human_canonical_map(frame: pd.DataFrame) -> pd.DataFrame:
 def _study1_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str, Any]]:
     path = source_dir / "datasets" / "Study1.csv"
     header, rows = _read_csv_rows(path)
+    required_columns = ["condition ", "n"] + [f"op{i}" for i in range(1, 31)]
+    _require_columns(header, required_columns, "Study1.csv")
+    if not rows:
+        raise ValueError("Study1.csv has no content rows after header.")
     prompt_row = rows[0]
     data_rows = rows[1:]
     header_index = {name: idx for idx, name in enumerate(header)}
@@ -160,7 +193,7 @@ def _study1_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
             if not answer:
                 continue
             raw_prompt = prompt_row[header_index[column]]
-            item_text_en = _extract_prompt_from_raw(raw_prompt, item_table, item_number)
+            item_text_en, extraction_method = _extract_prompt_from_raw_with_reason(raw_prompt, item_table, item_number)
             output_rows.append(
                 {
                     "study_id": "study1",
@@ -178,6 +211,7 @@ def _study1_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
                     "answer_key": make_match_key(answer),
                     "source_file": "Study1.csv",
                     "source_column": column,
+                    "prompt_extraction_method": extraction_method,
                 }
             )
     return output_rows
@@ -185,9 +219,15 @@ def _study1_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
 
 def _study2_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str, Any]]:
     header, rows = _read_csv_rows(source_dir / "datasets" / "Study2.csv")
+    required_columns = ["country_cat", "ResponseId"] + [f"item_{i}_uk" for i in range(1, 16)] + [
+        f"item_{i}_sa" for i in range(1, 16)
+    ]
+    _require_columns(header, required_columns, "Study2.csv")
+    if len(rows) < 2:
+        raise ValueError("Study2.csv does not include prompt + data rows.")
     prompt_row = rows[0]
-    data_rows = rows[2:]
     header_index = {name: idx for idx, name in enumerate(header)}
+    data_rows = _find_data_start(rows, header_index, "ResponseId", skip_rows=2)
     output_rows: list[dict[str, Any]] = []
 
     for respondent_offset, row in enumerate(data_rows, start=1):
@@ -212,7 +252,7 @@ def _study2_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
                 if not answer:
                     continue
                 raw_prompt = prompt_row[header_index[column]]
-                item_text_en = _extract_prompt_from_raw(raw_prompt, item_table, item_number)
+                item_text_en, extraction_method = _extract_prompt_from_raw_with_reason(raw_prompt, item_table, item_number)
                 output_rows.append(
                     {
                         "study_id": "study2",
@@ -230,6 +270,7 @@ def _study2_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
                         "answer_key": make_match_key(answer),
                         "source_file": "Study2.csv",
                         "source_column": column,
+                        "prompt_extraction_method": extraction_method,
                     }
                 )
     return output_rows
@@ -237,9 +278,15 @@ def _study2_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
 
 def _study3_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str, Any]]:
     header, rows = _read_csv_rows(source_dir / "datasets" / "Study3.csv")
+    required_columns = ["Country", "ResponseId"] + [f"item_{i}" for i in range(1, 16)] + [
+        f"item_{i}_glo" for i in range(1, 16)
+    ]
+    _require_columns(header, required_columns, "Study3.csv")
+    if len(rows) < 2:
+        raise ValueError("Study3.csv does not include prompt + data rows.")
     prompt_row = rows[0]
-    data_rows = rows[2:]
     header_index = {name: idx for idx, name in enumerate(header)}
+    data_rows = _find_data_start(rows, header_index, "ResponseId", skip_rows=2)
     output_rows: list[dict[str, Any]] = []
 
     for respondent_offset, row in enumerate(data_rows, start=1):
@@ -257,7 +304,7 @@ def _study3_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
                 if not answer:
                     continue
                 raw_prompt = prompt_row[header_index[column]]
-                item_text_en = _extract_prompt_from_raw(raw_prompt, item_table, item_number)
+                item_text_en, extraction_method = _extract_prompt_from_raw_with_reason(raw_prompt, item_table, item_number)
                 output_rows.append(
                     {
                         "study_id": "study3",
@@ -275,6 +322,7 @@ def _study3_rows(source_dir: Path, item_table: dict[int, str]) -> list[dict[str,
                         "answer_key": make_match_key(answer),
                         "source_file": "Study3.csv",
                         "source_column": column,
+                        "prompt_extraction_method": extraction_method,
                     }
                 )
     return output_rows
@@ -327,6 +375,33 @@ def prepare_human_panels(
         .sort_values(["panel_id", "item_number"])
     )
     panel_items.to_csv(prepared_dir / "panel_items.csv", index=False)
+
+    prompt_audit = (
+        frame[
+            [
+                "panel_id",
+                "study_id",
+                "item_id",
+                "item_number",
+                "item_text_en",
+                "source_file",
+                "source_column",
+                "prompt_extraction_method",
+            ]
+        ]
+        .drop_duplicates()
+        .sort_values(["study_id", "item_number", "panel_id"])
+    )
+    prompt_audit.to_csv(prepared_dir / "prompt_extraction_audit.csv", index=False)
+
+    risky_prompt_rows = prompt_audit[
+        prompt_audit["prompt_extraction_method"].isin({"regex_fallback", "generic_item_fallback"})
+    ]
+    if not risky_prompt_rows.empty:
+        LOGGER.warning(
+            "Prompt extraction used fallback paths for %s item mappings; inspect prompt_extraction_audit.csv",
+            int(risky_prompt_rows.shape[0]),
+        )
 
     manifest = {
         "source_snapshot_id": source_snapshot_id,

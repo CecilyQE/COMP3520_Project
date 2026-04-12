@@ -64,6 +64,7 @@ def _write_run_manifest(run_dir: Path, config: BenchmarkConfig, prepared_dir: Pa
         "panel_id": config.sampling.panel_id,
         "prompt_languages": config.sampling.prompt_languages,
         "answer_language": config.sampling.answer_language,
+        "configured_item_ids": config.sampling.item_ids or [],
     }
     write_json(run_dir / "run_manifest.json", manifest)
 
@@ -205,6 +206,12 @@ def run_sampling(
     item_ids: list[str] | None = None,
 ) -> Path:
     config = load_config(config_path)
+    enabled_providers = [name for name, provider in config.providers.items() if provider.enabled]
+    if config.sampling.max_enabled_providers > 0 and len(enabled_providers) > config.sampling.max_enabled_providers:
+        raise ValueError(
+            "Too many enabled providers for one run: "
+            f"{enabled_providers}. Set sampling.max_enabled_providers or disable extra providers."
+        )
     if run_dir is None:
         prepared_dir = latest_prepared_snapshot_or_raise()
         run_dir = create_run_dir(config, prepared_dir)
@@ -223,7 +230,11 @@ def run_sampling(
             prepared_dir = latest_prepared_snapshot_or_raise()
             _write_run_manifest(run_dir, config, prepared_dir, run_id=run_dir.name)
 
-    panel_items = _load_panel_items(prepared_dir, config.sampling.panel_id, item_ids=item_ids)
+    requested_item_ids = item_ids
+    if requested_item_ids is None and round_index == 1:
+        requested_item_ids = config.sampling.item_ids
+
+    panel_items = _load_panel_items(prepared_dir, config.sampling.panel_id, item_ids=requested_item_ids)
     raw_path = run_dir / "raw_generations.jsonl"
     ensure_dir(config.outputs.cache_root)
     completed_ids = completed_request_ids(raw_path)
@@ -232,7 +243,7 @@ def run_sampling(
         if not provider_config.enabled:
             continue
         provider = _provider_instance(provider_name, config)
-        requests = _request_records(config, provider_name, panel_items, round_index, item_ids=item_ids)
+        requests = _request_records(config, provider_name, panel_items, round_index, item_ids=requested_item_ids)
         pending_requests = [
             request
             for request in requests

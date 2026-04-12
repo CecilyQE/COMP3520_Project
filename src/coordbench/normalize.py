@@ -20,8 +20,91 @@ def _load_aliases(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=["panel_id", "item_id", "surface_form", "canonical_answer", "notes"])
     aliases = pd.read_csv(path)
+    for column in ["panel_id", "item_id", "surface_form", "canonical_answer", "notes"]:
+        if column not in aliases.columns:
+            aliases[column] = ""
     aliases["surface_key"] = aliases["surface_form"].astype(str).map(make_match_key)
     return aliases
+
+
+def _auto_aliases_from_participant_data(
+    prepared_dir: Path,
+    human_lookup: dict[tuple[str, str, str], str],
+) -> pd.DataFrame:
+    participant_path = prepared_dir / "participant_responses.csv"
+    if not participant_path.exists():
+        return pd.DataFrame(columns=["panel_id", "item_id", "surface_form", "canonical_answer", "notes", "surface_key"])
+    participant = pd.read_csv(participant_path)
+    required = {"panel_id", "item_id", "answer_key", "response_original", "response_clean"}
+    if not required.issubset(participant.columns):
+        return pd.DataFrame(columns=["panel_id", "item_id", "surface_form", "canonical_answer", "notes", "surface_key"])
+
+    rows: list[dict[str, str]] = []
+    for row in participant.itertuples():
+        key = (str(row.panel_id), str(row.item_id), str(row.answer_key))
+        canonical = human_lookup.get(key)
+        if not canonical:
+            continue
+        for surface in [str(row.response_original or "").strip(), str(row.response_clean or "").strip(), canonical]:
+            surface = surface.strip()
+            if not surface:
+                continue
+            rows.append(
+                {
+                    "panel_id": str(row.panel_id),
+                    "item_id": str(row.item_id),
+                    "surface_form": surface,
+                    "canonical_answer": canonical,
+                    "notes": "auto_synced_from_participant_responses",
+                }
+            )
+    if not rows:
+        return pd.DataFrame(columns=["panel_id", "item_id", "surface_form", "canonical_answer", "notes", "surface_key"])
+    frame = pd.DataFrame(rows).drop_duplicates(subset=["panel_id", "item_id", "surface_form", "canonical_answer"])
+    frame["surface_key"] = frame["surface_form"].astype(str).map(make_match_key)
+    return frame
+
+
+def _alias_coverage_report(
+    aliases: pd.DataFrame,
+    human: pd.DataFrame,
+) -> pd.DataFrame:
+    if human.empty:
+        return pd.DataFrame(
+            columns=[
+                "panel_id",
+                "item_id",
+                "human_answer_key_count",
+                "alias_surface_key_count",
+                "covered_human_answer_key_count",
+                "coverage_rate",
+            ]
+        )
+    alias_keys = (
+        aliases.groupby(["panel_id", "item_id"], dropna=False)["surface_key"]
+        .apply(lambda values: {str(v) for v in values if str(v)})
+        .to_dict()
+    )
+    rows: list[dict[str, Any]] = []
+    for (panel_id, item_id), group in human.groupby(["panel_id", "item_id"]):
+        human_keys = {str(row.answer_key) for row in group.itertuples() if str(row.answer_key)}
+        global_alias = alias_keys.get(("", ""), set())
+        panel_global_alias = alias_keys.get((panel_id, ""), set())
+        item_global_alias = alias_keys.get(("", item_id), set())
+        scoped_alias = alias_keys.get((panel_id, item_id), set())
+        all_alias = global_alias | panel_global_alias | item_global_alias | scoped_alias
+        covered = human_keys & all_alias
+        rows.append(
+            {
+                "panel_id": panel_id,
+                "item_id": item_id,
+                "human_answer_key_count": len(human_keys),
+                "alias_surface_key_count": len(all_alias),
+                "covered_human_answer_key_count": len(covered),
+                "coverage_rate": (len(covered) / len(human_keys)) if human_keys else 1.0,
+            }
+        )
+    return pd.DataFrame(rows).sort_values(["panel_id", "item_id"]).reset_index(drop=True)
 
 
 def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
@@ -51,11 +134,19 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
     frame["response_clean"] = frame["parsed_answer"].map(clean_surface)
     frame["answer_key"] = frame["response_clean"].map(make_match_key)
 
-    aliases = _load_aliases(config.normalization.alias_path)
     human = pd.read_csv(prepared_dir / "human_distributions.csv")
     human_lookup: dict[tuple[str, str, str], str] = {
         (row.panel_id, row.item_id, row.answer_key): row.canonical_answer for row in human.itertuples()
     }
+    aliases = _load_aliases(config.normalization.alias_path)
+    auto_aliases = _auto_aliases_from_participant_data(prepared_dir, human_lookup)
+    if not auto_aliases.empty:
+        aliases = pd.concat([aliases, auto_aliases], ignore_index=True)
+        aliases = aliases.drop_duplicates(subset=["panel_id", "item_id", "surface_key", "canonical_answer"])
+
+    coverage_report = _alias_coverage_report(aliases, human)
+    coverage_report.to_csv(run_dir / "alias_coverage_report.csv", index=False)
+
     human_candidates: dict[tuple[str, str], list[tuple[str, str]]] = {}
     for (panel_id, item_id), group in human.groupby(["panel_id", "item_id"]):
         human_candidates[(panel_id, item_id)] = [
@@ -106,10 +197,28 @@ def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
                 else:
                     status = "unmapped"
 
+        closest_human_key = ""
+        closest_human_canonical = ""
+        closest_human_score = None
+        if answer_key:
+            candidates = human_candidates.get((panel_id, item_id), [])
+            candidate_keys = [candidate_key for candidate_key, _ in candidates if candidate_key]
+            nearest = process.extractOne(answer_key, candidate_keys, scorer=fuzz.ratio) if candidate_keys else None
+            if nearest:
+                closest_human_key = str(nearest[0])
+                closest_human_score = float(nearest[1])
+                for candidate_key, candidate_answer in candidates:
+                    if candidate_key == closest_human_key:
+                        closest_human_canonical = str(candidate_answer)
+                        break
+
         normalized = {
             **row,
             "canonical_answer": canonical_answer,
             "normalization_status": status,
+            "closest_human_answer_key": closest_human_key,
+            "closest_human_canonical": closest_human_canonical,
+            "closest_human_score": closest_human_score,
         }
         normalized_rows.append(normalized)
         if status in {"invalid", "unmapped"}:

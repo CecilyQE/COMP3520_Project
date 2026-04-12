@@ -20,7 +20,7 @@ from coordbench.runner import run_sampling
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "configs" / "universal_api_full.yaml"
 ARTIFACT_ROOT = REPO_ROOT / "artifacts" / "full_experiments"
-RESULTS_ROOT = REPO_ROOT / "results"
+RESULTS_ROOT = REPO_ROOT / "results" / "full_experiments" / "summaries"
 
 MODELS: list[tuple[str, int]] = [
     ("qwen3-coder-plus", 6),
@@ -128,8 +128,36 @@ def _summary_metric(summary_rows: list[dict[str, Any]], metric_family: str, roun
 
 
 def _collect_summary(model: str, concurrency: int, run_dir: Path, wall_seconds: float, status: str, notes: str) -> ExperimentSummary:
-    manifest = _read_json(run_dir / "run_manifest.json")
+    manifest_path = run_dir / "run_manifest.json"
     raw_rows = _read_jsonl(run_dir / "raw_generations.jsonl")
+    if not manifest_path.exists():
+        return ExperimentSummary(
+            model=model,
+            price_tier=MODEL_PRICE_TIERS.get(model, "unknown"),
+            concurrency=concurrency,
+            status=status,
+            run_dir=str(run_dir),
+            wall_seconds=round(wall_seconds, 2),
+            completed_rounds=[],
+            raw_record_count=len(raw_rows),
+            round2_candidate_count=None,
+            unresolved_count=None,
+            complete_cell_count=None,
+            incomplete_cell_count=None,
+            provider_errors=0,
+            empty_responses=0,
+            thought_pollution=0,
+            truncation_count=0,
+            cross_lingual_round1_jsd=None,
+            cross_lingual_round1_top1=None,
+            cross_lingual_round2_jsd=None,
+            cross_lingual_round2_top1=None,
+            human_alignment_en_round1_jsd=None,
+            human_alignment_zh_round1_jsd=None,
+            notes=f"{notes}; run_manifest_missing",
+        )
+
+    manifest = _read_json(manifest_path)
     provider_errors = 0
     empty_responses = 0
     thought_pollution = 0
@@ -214,7 +242,14 @@ def _run_model(root_dir: Path, model: str, concurrency: int) -> ExperimentSummar
         notes = str(exc)
         if run_dir is None:
             config = load_config(CONFIG_PATH)
-            maybe_runs = sorted(Path(config.outputs.run_root).glob("*"), key=lambda path: path.name)
+            maybe_runs = sorted(
+                [
+                    path
+                    for path in Path(config.outputs.run_root).glob("*")
+                    if (path / "run_manifest.json").exists()
+                ],
+                key=lambda path: path.name,
+            )
             run_dir = maybe_runs[-1] if maybe_runs else model_root
     finally:
         _restore_env(previous)
@@ -269,6 +304,7 @@ def main() -> int:
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%SZ")
     root_dir = ARTIFACT_ROOT / timestamp
     root_dir.mkdir(parents=True, exist_ok=True)
+    RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
 
     rows: list[ExperimentSummary] = []
     for model, concurrency in MODELS:

@@ -76,6 +76,8 @@ class SamplingConfig:
     panel_id: str
     answer_language: str
     prompt_languages: list[str]
+    item_ids: list[str] | None
+    max_enabled_providers: int
     round1_samples: int
     round2_samples: int
     enable_round2: bool

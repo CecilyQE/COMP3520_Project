@@ -17,6 +17,9 @@ import requests
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_ROOT = REPO_ROOT / "artifacts" / "full_experiments"
 RESULTS_ROOT = REPO_ROOT / "results"
+FULL_EXPERIMENT_RESULTS_ROOT = RESULTS_ROOT / "full_experiments"
+INDEX_ROOT = FULL_EXPERIMENT_RESULTS_ROOT / "indexes"
+SUMMARY_ROOT = FULL_EXPERIMENT_RESULTS_ROOT / "summaries"
 INDEX_BASENAME = "new_models_full_experiments"
 USAGE_API_BASE = os.environ.get("TOKENLAND_API_BASE", "https://api.mytokenland.com").rstrip("/")
 POLL_SECONDS = 60
@@ -331,8 +334,8 @@ def _terminate_process(proc: subprocess.Popen[str]) -> None:
 
 
 def _index_paths(batch_tag: str) -> tuple[Path, Path]:
-    json_path = RESULTS_ROOT / f"{INDEX_BASENAME}_{batch_tag}.json"
-    md_path = RESULTS_ROOT / f"{INDEX_BASENAME}_{batch_tag}.md"
+    json_path = INDEX_ROOT / f"{INDEX_BASENAME}_{batch_tag}.json"
+    md_path = INDEX_ROOT / f"{INDEX_BASENAME}_{batch_tag}.md"
     return json_path, md_path
 
 
@@ -409,7 +412,8 @@ def _start_model(model: str, concurrency: int, root_tag: str, out_log: Path, err
 
 def main() -> int:
     _load_env()
-    RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
+    INDEX_ROOT.mkdir(parents=True, exist_ok=True)
+    SUMMARY_ROOT.mkdir(parents=True, exist_ok=True)
     ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
 
     batch_tag = datetime.now().strftime("%Y%m%dT%H%M%SZ")
@@ -474,7 +478,7 @@ def main() -> int:
         run_dir = _find_run_dir(root_tag, model)
         metrics = _metrics_for_run(run_dir)
         summary_json = ARTIFACT_ROOT / root_tag / "summary.json"
-        summary_md = RESULTS_ROOT / f"full_experiment_summary_{root_tag}.md"
+        summary_md = SUMMARY_ROOT / f"full_experiment_summary_{root_tag}.md"
         if stop_reason:
             status = "stopped_early"
         else:

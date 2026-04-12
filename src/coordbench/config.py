@@ -92,6 +92,8 @@ def load_config(path: str | Path) -> BenchmarkConfig:
             panel_id=str(sampling_raw.get("panel_id", "study2_british_within")),
             answer_language=str(sampling_raw.get("answer_language", "English")),
             prompt_languages=list(sampling_raw.get("prompt_languages", ["en", "zh"])),
+            item_ids=list(sampling_raw.get("item_ids", [])) or None,
+            max_enabled_providers=int(sampling_raw.get("max_enabled_providers", 1)),
             round1_samples=int(sampling_raw.get("round1_samples", 30)),
             round2_samples=int(sampling_raw.get("round2_samples", 10)),
             enable_round2=bool(sampling_raw.get("enable_round2", True)),
@@ -104,7 +106,7 @@ def load_config(path: str | Path) -> BenchmarkConfig:
                 normalization_raw.get("alias_path"),
                 aliases_path(),
             ),
-            allow_unmapped=bool(normalization_raw.get("allow_unmapped", True)),
+            allow_unmapped=bool(normalization_raw.get("allow_unmapped", False)),
             fuzzy_match_threshold=int(normalization_raw.get("fuzzy_match_threshold", 95)),
         ),
         analysis=AnalysisConfig(

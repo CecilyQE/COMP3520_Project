@@ -7,7 +7,12 @@ from coordbench.analysis import analyze_run
 from coordbench.normalize import normalize_run
 
 
-def _write_config(tmp_path: Path, *, round1_samples: int = 2) -> Path:
+def _write_config(
+    tmp_path: Path,
+    *,
+    round1_samples: int = 2,
+    round2_trigger: str = "cross_lingual_top1_mismatch",
+) -> Path:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         "\n".join(
@@ -24,7 +29,7 @@ def _write_config(tmp_path: Path, *, round1_samples: int = 2) -> Path:
                 f"  round1_samples: {round1_samples}",
                 "  round2_samples: 1",
                 "  enable_round2: true",
-                "  round2_trigger: cross_lingual_top1_mismatch",
+                f"  round2_trigger: {round2_trigger}",
                 "  random_seed: 1",
                 "normalization:",
                 f"  alias_path: {tmp_path.as_posix()}/aliases.csv",
@@ -269,3 +274,43 @@ def test_normalize_marks_service_errors_and_truncated_reasoning_invalid(tmp_path
 
     valid_rows = normalized[normalized["prompt_language"] == "zh"].reset_index(drop=True)
     assert valid_rows["canonical_answer"].tolist() == ["old_london", "old_london"]
+
+
+def test_round2_candidates_respect_configured_trigger(tmp_path: Path, monkeypatch):
+    prepared_root = tmp_path / "prepared"
+    snapshot = prepared_root / "snapshot"
+    _write_prepared_snapshot(snapshot, london_label="old_london", paris_label="old_paris")
+    monkeypatch.setattr("coordbench.run_state.prepared_root", lambda: prepared_root)
+
+    raw_rows = [
+        _raw_row(prompt_language="en", sample_index=0, response_text="Paris", request_cache_key="en-0"),
+        _raw_row(prompt_language="en", sample_index=1, response_text="Paris", request_cache_key="en-1"),
+        _raw_row(prompt_language="zh", sample_index=0, response_text="Paris", request_cache_key="zh-0"),
+        _raw_row(prompt_language="zh", sample_index=1, response_text="Paris", request_cache_key="zh-1"),
+    ]
+
+    for trigger, should_select in [
+        ("cross_lingual_top1_mismatch", False),
+        ("human_top1_mismatch", True),
+        ("either_top1_mismatch", True),
+    ]:
+        config_path = _write_config(tmp_path, round1_samples=2, round2_trigger=trigger)
+        run_dir = tmp_path / "runs" / f"trigger-{trigger}"
+        run_dir.mkdir(parents=True)
+        (run_dir / "run_manifest.json").write_text(
+            json.dumps({"run_id": run_dir.name, "prepared_snapshot_id": "snapshot", "panel_id": "study2_british_within"}),
+            encoding="utf-8",
+        )
+        with (run_dir / "raw_generations.jsonl").open("w", encoding="utf-8") as handle:
+            for row in raw_rows:
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        normalize_run(config_path, run_dir)
+        analyze_run(config_path, run_dir)
+
+        round2_candidates = pd.read_csv(run_dir / "round2_candidates.csv")
+        if should_select:
+            assert round2_candidates["item_id"].tolist() == ["study2_item_01"]
+            assert round2_candidates["trigger"].tolist() == [trigger]
+        else:
+            assert round2_candidates.empty

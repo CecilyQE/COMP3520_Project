@@ -14,6 +14,11 @@ from coordbench.utils.files import read_json, write_json
 
 LOGGER = logging.getLogger(__name__)
 
+ROUND2_TRIGGER_CROSS = "cross_lingual_top1_mismatch"
+ROUND2_TRIGGER_HUMAN = "human_top1_mismatch"
+ROUND2_TRIGGER_EITHER = "either_top1_mismatch"
+VALID_ROUND2_TRIGGERS = {ROUND2_TRIGGER_CROSS, ROUND2_TRIGGER_HUMAN, ROUND2_TRIGGER_EITHER}
+
 CELL_KEYS = ["provider", "model", "round_index", "panel_id", "item_id", "prompt_language"]
 CELL_COMPLETENESS_COLUMNS = [
     *CELL_KEYS,
@@ -198,7 +203,7 @@ def _human_alignment_rows(
                 "jsd": jsd(llm_dist, human_dist),
                 "tvd": tvd(llm_dist, human_dist),
                 "top1_match": top1_match(llm_dist, human_dist),
-                "flip_rate": 0,
+                "flip_rate": None,
                 "spearman": spearman_frequency(llm_dist, human_dist),
                 "successful_samples": int(cell_stats["successful_samples"]),
                 "expected_samples": int(cell_stats["expected_samples"]),
@@ -245,51 +250,118 @@ def _item_level_bootstrap(
             en_answers = lang_groups["en"]["canonical_answer"].astype(str).to_numpy()
             zh_answers = lang_groups["zh"]["canonical_answer"].astype(str).to_numpy()
             if len(en_answers) and len(zh_answers):
-                values = []
+                jsd_values = []
+                tvd_values = []
+                spearman_values = []
                 for _ in range(resamples):
                     en_draw = rng.choice(en_answers, size=len(en_answers), replace=True)
                     zh_draw = rng.choice(zh_answers, size=len(zh_answers), replace=True)
-                    values.append(jsd(distribution_from_answers(en_draw), distribution_from_answers(zh_draw)))
-                rows.append(
-                    {
-                        "scope": "item",
-                        "metric_family": "cross_lingual",
-                        "provider": provider,
-                        "model": model,
-                        "round_index": round_index,
-                        "panel_id": panel_id,
-                        "item_id": item_id,
-                        "prompt_language": "en_vs_zh",
-                        "metric": "jsd",
-                        "ci_low": float(np.quantile(values, 0.025)),
-                        "ci_high": float(np.quantile(values, 0.975)),
-                    }
-                )
+                    en_dist = distribution_from_answers(en_draw)
+                    zh_dist = distribution_from_answers(zh_draw)
+                    jsd_values.append(jsd(en_dist, zh_dist))
+                    tvd_values.append(tvd(en_dist, zh_dist))
+                    sp = spearman_frequency(en_dist, zh_dist)
+                    if sp is not None:
+                        spearman_values.append(sp)
+                for metric_name, metric_values in [
+                    ("jsd", jsd_values),
+                    ("tvd", tvd_values),
+                    ("spearman", spearman_values),
+                ]:
+                    if not metric_values:
+                        continue
+                    rows.append(
+                        {
+                            "scope": "item",
+                            "metric_family": "cross_lingual",
+                            "provider": provider,
+                            "model": model,
+                            "round_index": round_index,
+                            "panel_id": panel_id,
+                            "item_id": item_id,
+                            "prompt_language": "en_vs_zh",
+                            "metric": metric_name,
+                            "ci_low": float(np.quantile(metric_values, 0.025)),
+                            "ci_high": float(np.quantile(metric_values, 0.975)),
+                        }
+                    )
         for prompt_language, subset in lang_groups.items():
             llm_answers = subset["canonical_answer"].astype(str).to_numpy()
             if len(llm_answers) == 0:
                 continue
             human_dist = human_dists[(panel_id, item_id)]
-            values = []
+            jsd_values = []
+            tvd_values = []
+            spearman_values = []
             for _ in range(resamples):
                 llm_draw = rng.choice(llm_answers, size=len(llm_answers), replace=True)
-                values.append(jsd(distribution_from_answers(llm_draw), human_dist))
-            rows.append(
-                {
-                    "scope": "item",
-                    "metric_family": "human_alignment",
-                    "provider": provider,
-                    "model": model,
-                    "round_index": round_index,
-                    "panel_id": panel_id,
-                    "item_id": item_id,
-                    "prompt_language": prompt_language,
-                    "metric": "jsd",
-                    "ci_low": float(np.quantile(values, 0.025)),
-                    "ci_high": float(np.quantile(values, 0.975)),
-                }
-            )
+                llm_dist = distribution_from_answers(llm_draw)
+                jsd_values.append(jsd(llm_dist, human_dist))
+                tvd_values.append(tvd(llm_dist, human_dist))
+                sp = spearman_frequency(llm_dist, human_dist)
+                if sp is not None:
+                    spearman_values.append(sp)
+            for metric_name, metric_values in [
+                ("jsd", jsd_values),
+                ("tvd", tvd_values),
+                ("spearman", spearman_values),
+            ]:
+                if not metric_values:
+                    continue
+                rows.append(
+                    {
+                        "scope": "item",
+                        "metric_family": "human_alignment",
+                        "provider": provider,
+                        "model": model,
+                        "round_index": round_index,
+                        "panel_id": panel_id,
+                        "item_id": item_id,
+                        "prompt_language": prompt_language,
+                        "metric": metric_name,
+                        "ci_low": float(np.quantile(metric_values, 0.025)),
+                        "ci_high": float(np.quantile(metric_values, 0.975)),
+                    }
+                )
     return rows
+
+
+def _round2_candidates(item_metrics: pd.DataFrame, round2_trigger: str) -> pd.DataFrame:
+    if item_metrics.empty:
+        return pd.DataFrame(columns=["item_id", "trigger"])
+
+    selected_trigger = round2_trigger
+    if selected_trigger not in VALID_ROUND2_TRIGGERS:
+        LOGGER.warning("Unknown round2_trigger=%s; fallback to %s", selected_trigger, ROUND2_TRIGGER_CROSS)
+        selected_trigger = ROUND2_TRIGGER_CROSS
+
+    round1 = item_metrics[item_metrics["round_index"] == 1]
+    cross_ids = set(
+        round1[
+            (round1["metric_family"] == "cross_lingual")
+            & (round1["top1_match"] == 0)
+        ]["item_id"].astype(str)
+    )
+    human_ids = set(
+        round1[
+            (round1["metric_family"] == "human_alignment")
+            & (round1["top1_match"] == 0)
+        ]["item_id"].astype(str)
+    )
+
+    if selected_trigger == ROUND2_TRIGGER_CROSS:
+        item_ids = cross_ids
+    elif selected_trigger == ROUND2_TRIGGER_HUMAN:
+        item_ids = human_ids
+    else:
+        item_ids = cross_ids | human_ids
+
+    if not item_ids:
+        return pd.DataFrame(columns=["item_id", "trigger"])
+
+    round2_candidates = pd.DataFrame({"item_id": sorted(item_ids)})
+    round2_candidates["trigger"] = selected_trigger
+    return round2_candidates
 
 
 def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
@@ -384,7 +456,10 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
             & (item_metrics["round_index"] == summary["round_index"])
             & (item_metrics["prompt_language"] == summary["prompt_language"])
         ]
-        for metric in ["jsd", "tvd", "top1_match", "flip_rate"]:
+        metrics = ["jsd", "tvd", "top1_match", "flip_rate"]
+        if summary["metric_family"] != "cross_lingual":
+            metrics = ["jsd", "tvd", "top1_match"]
+        for metric in metrics:
             ci_low, ci_high = _bootstrap_mean(
                 subset[metric].to_numpy(dtype=float),
                 config.analysis.bootstrap_resamples,
@@ -409,15 +484,7 @@ def analyze_run(config_path: str | Path, run_id: str | Path) -> Path:
     )
     pd.DataFrame(bootstrap_rows, columns=BOOTSTRAP_COLUMNS).to_csv(run_dir / "bootstrap_intervals.csv", index=False)
 
-    if item_metrics.empty:
-        round2_candidates = pd.DataFrame(columns=["item_id", "trigger"])
-    else:
-        round2_candidates = item_metrics[
-            (item_metrics["metric_family"] == "cross_lingual")
-            & (item_metrics["round_index"] == 1)
-            & (item_metrics["top1_match"] == 0)
-        ][["item_id"]].drop_duplicates()
-        round2_candidates["trigger"] = "cross_lingual_top1_mismatch"
+    round2_candidates = _round2_candidates(item_metrics, config.sampling.round2_trigger)
     round2_candidates.to_csv(run_dir / "round2_candidates.csv", index=False)
 
     manifest = read_json(run_dir / "run_manifest.json")
