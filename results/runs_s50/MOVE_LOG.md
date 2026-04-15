@@ -26,11 +26,15 @@ Moved completed 50-sample runs from the 2026-04-14 universal API full experiment
 
 ### Final Paths (`model_timestamp`)
 
+- `results/runs_s50/gpt-5.4-mini_20260413T081755Z`
+- `results/runs_s50/gpt-5.4_20260413T112311Z`
 - `results/runs_s50/MiniMax-M2.7_20260414T105529Z`
 - `results/runs_s50/kimi-for-coding_20260414T162518Z`
 
 ### Original Artifact Paths
 
+- `artifacts/full_experiments/gpt54mini_s50_c3_20260413T161752Z/runs/20260413T081755Z`
+- `artifacts/full_experiments/gpt54_s50_c3_20260413T192303Z/runs/20260413T112311Z`
 - `artifacts/full_experiments/20260414T185527Z_MiniMax-M2.7_c10/runs/20260414T105529Z`
 - `artifacts/full_experiments/20260414T162514Z_kimi-for-coding_c5/runs/20260414T162518Z`
 
