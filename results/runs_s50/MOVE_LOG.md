@@ -19,3 +19,22 @@ Moved completed 50-sample runs (with analysis artifacts) from `artifacts/full_ex
 ## Not Moved
 
 - `deepseek-v1` run not moved because the run was incomplete.
+
+## Added 2026-04-15
+
+Moved completed 50-sample runs from the 2026-04-14 universal API full experiment batch into `results/runs_s50/`.
+
+### Final Paths (`model_timestamp`)
+
+- `results/runs_s50/MiniMax-M2.7_20260414T105529Z`
+- `results/runs_s50/kimi-for-coding_20260414T162518Z`
+
+### Original Artifact Paths
+
+- `artifacts/full_experiments/20260414T185527Z_MiniMax-M2.7_c10/runs/20260414T105529Z`
+- `artifacts/full_experiments/20260414T162514Z_kimi-for-coding_c5/runs/20260414T162518Z`
+
+### Notes
+
+- Both runs reached `raw_record_count=1500`.
+- `run_manifest.json` shows `normalization_completed=true` for both runs, but the outer `run-all` flow still raised because unresolved outputs remained.
