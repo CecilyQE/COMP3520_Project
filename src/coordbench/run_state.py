@@ -33,7 +33,16 @@ def resolve_run_dir(run_root: Path, run_id: str | Path) -> Path:
 def load_run_manifest(run_dir: Path) -> dict[str, Any]:
     manifest_path = run_dir / "run_manifest.json"
     if not manifest_path.exists():
-        raise FileNotFoundError(f"Run manifest not found: {manifest_path}")
+        hint = (
+            " Use an absolute path to the run directory as --run-id if this run was created "
+            "under a different config `outputs.run_root` (e.g. Track B with run_root under results/runs_s50)."
+        )
+        if not run_dir.exists():
+            hint = (
+                " The run directory does not exist at this path (check config run_root vs where sampling wrote files)."
+                + hint
+            )
+        raise FileNotFoundError(f"Run manifest not found: {manifest_path}\n{hint}")
     manifest = read_json(manifest_path)
     if not isinstance(manifest, dict):
         raise ValueError(f"Run manifest is not a JSON object: {manifest_path}")

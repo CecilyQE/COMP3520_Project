@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -138,8 +139,18 @@ def _coord_key(response_clean: str, item_id: str) -> str:
     return make_match_key(" ".join(tokens))
 
 
-def normalize_run(config_path: str | Path, run_id: str | Path) -> Path:
+def normalize_run(
+    config_path: str | Path,
+    run_id: str | Path,
+    *,
+    allow_unmapped_override: bool | None = None,
+) -> Path:
     config = load_config(config_path)
+    if allow_unmapped_override is not None:
+        config = replace(
+            config,
+            normalization=replace(config.normalization, allow_unmapped=allow_unmapped_override),
+        )
     run_dir = resolve_run_dir(config.outputs.run_root, run_id)
     if not run_dir.exists():
         raise FileNotFoundError(f"Run directory not found: {run_dir}")

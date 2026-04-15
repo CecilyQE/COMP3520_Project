@@ -31,3 +31,8 @@ def test_response_validation_rejects_truncated_partial_answer():
         )
         == "response was truncated before a final answer was produced"
     )
+
+
+def test_response_validation_accepts_short_answer_when_truncated():
+    """Coordination answers often finish before trailing text hits max_tokens."""
+    assert response_validation_error(text="London", finish_reason="length") is None

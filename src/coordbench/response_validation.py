@@ -43,12 +43,21 @@ def response_validation_error(
     if looks_like_service_error(text):
         return "provider returned a service error message instead of an answer"
 
+    answer = extract_first_answer_line(text)
     lowered_finish_reason = str(finish_reason or "").strip().lower()
-    if lowered_finish_reason in {"length", "max_tokens"}:
+    truncated = lowered_finish_reason in {"length", "max_tokens"}
+
+    if answer:
+        if not truncated:
+            return None
+        # Truncation + a short coordination-style line: accept (avoids pointless retries when
+        # the model already printed the answer and then hit max_tokens on trailing chatter).
+        words = answer.split()
+        if len(words) <= 4 and len(answer) <= 64:
+            return None
         return "response was truncated before a final answer was produced"
 
-    answer = extract_first_answer_line(text)
-    if answer:
-        return None
+    if truncated:
+        return "response was truncated before a final answer was produced"
 
     return "response does not contain a usable final answer"

@@ -1,4 +1,5 @@
 .env
+.venv/
 .vscode/
 .pytest_cache/
 matplotlib-*/
@@ -6,6 +7,7 @@ pytest-of-*/
 *.pyc
 __pycache__/
 artifacts/
+results/runs_s50/track_b_*/
 data/prepared/
 data/raw/
 data/cache/

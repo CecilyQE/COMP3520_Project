@@ -11,6 +11,16 @@ It supports:
   - human-alignment from human-mapped `canonical_answer`
 - round-2 re-coordination candidate generation
 
+**Track B（Agent 集成流程）**：Track B 的集成实现放在 `Agent/` 目录内（包名 `track-b-agent`），主 `coordbench track-b ...` 命令会在安装 Agent 包后调用它。在已完成 **normalize + analyze** 的 baseline 运行上，自动 flag → LLM 诊断 → repair/sham 双臂重采样（`round_index` 默认 3 / 4）→ `normalize` → `analyze` → `track_b_report.md`。日志里会以 **`[Track B] phase i/6 … | overall xx%`** 标出当前阶段与子步进度；若长时间没有新行，多半是在等单次 API（诊断或某个采样请求）返回。
+
+```bash
+coordbench track-b run --config configs/study2_british_en_zh.yaml --baseline-run <run_id_or_path>
+# 无诊断 API时可用占位标签：
+coordbench track-b run --config configs/study2_british_en_zh.yaml --baseline-run <run_id> --stub-diagnose
+```
+
+双臂的每格样本数取自配置里的 **`sampling.round2_samples`**（round 3/4 与 round 2 共用该期望值）。可选：`Agent/` 下仍有 `track-b-agent` 分步脚手架与 [`Agent/agent_plan.md`](Agent/agent_plan.md)。
+
 ## Quick Start
 
 1. Install:
@@ -42,6 +52,7 @@ coordbench normalize --config configs/study2_british_en_zh.yaml --run-id <run_id
 coordbench analyze --config configs/study2_british_en_zh.yaml --run-id <run_id>
 coordbench plot --config configs/study2_british_en_zh.yaml --run-id <run_id>
 coordbench run-all --config configs/study2_british_en_zh.yaml
+coordbench track-b run --config configs/study2_british_en_zh.yaml --baseline-run <run_id_or_path>
 ```
 
 ## Standard Workflow

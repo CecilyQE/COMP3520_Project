@@ -4,8 +4,11 @@ providers:
     model: ${DEEPSEEK_MODEL}
     api_key_env: DEEPSEEK_API_KEY
     base_url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    # If https_proxy is set but unreachable, set false (or DEEPSEEK_TRUST_ENV=false) for direct API access.
+    trust_env: false
     concurrency: 4
     max_retries: 10
+    timeout_seconds: 300
     temperature: 1.0
     max_output_tokens: 256
 

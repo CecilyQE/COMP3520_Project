@@ -14,6 +14,10 @@ from coordbench.logging_utils import configure_logging
 from coordbench.normalize import normalize_run
 from coordbench.plots import plot_run
 from coordbench.runner import run_sampling
+try:
+    from track_b_agent.integrated.pipeline import run_track_b as run_track_b_agent
+except Exception:  # noqa: BLE001
+    run_track_b_agent = None
 
 
 def _resolve_run_dir(config_path: str | Path, run_id: str) -> Path:
@@ -77,6 +81,11 @@ def build_parser() -> argparse.ArgumentParser:
     normalize_parser = subparsers.add_parser("normalize", help="Normalize a run against the human benchmark.")
     normalize_parser.add_argument("--config", required=True)
     normalize_parser.add_argument("--run-id", required=True)
+    normalize_parser.add_argument(
+        "--allow-unmapped",
+        action="store_true",
+        help="Treat unmatched answers as unmapped instead of failing (useful for Track B repair/sham surfaces).",
+    )
 
     analyze_parser = subparsers.add_parser("analyze", help="Compute metrics for a run.")
     analyze_parser.add_argument("--config", required=True)
@@ -88,6 +97,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_all_parser = subparsers.add_parser("run-all", help="Run the complete end-to-end benchmark pipeline.")
     run_all_parser.add_argument("--config", required=True)
+
+    track_b_parser = subparsers.add_parser(
+        "track-b",
+        help="Track B runner is provided by the Agent package. Install it with: pip install -e Agent",
+    )
+    track_b_sub = track_b_parser.add_subparsers(dest="track_b_command", required=True)
+    track_b_run = track_b_sub.add_parser("run", help="Run Track B via Agent/ integration.")
+    track_b_run.add_argument("--config", required=True, help="Benchmark YAML (panel must match baseline).")
+    track_b_run.add_argument("--baseline-run", required=True, help="Baseline run id under run_root, or absolute path.")
+    track_b_run.add_argument("--track-b-config", default="Agent/config/track_b.example.yaml")
+    track_b_run.add_argument("--repair-templates", default="Agent/prompts/repair_templates.yaml")
+    track_b_run.add_argument("--tag-map", default="Agent/prompts/tag_to_repair.yaml")
+    track_b_run.add_argument("--provider", default=None)
+    track_b_run.add_argument("--stub-diagnose", action="store_true")
+    track_b_run.add_argument("--diagnosis-max-output-tokens", type=int, default=256)
+    track_b_run.add_argument("--repair-round", type=int, default=3)
+    track_b_run.add_argument("--sham-round", type=int, default=4)
     return parser
 
 
@@ -123,7 +149,11 @@ def main() -> None:
         return
 
     if args.command == "normalize":
-        normalized = normalize_run(args.config, args.run_id)
+        normalized = normalize_run(
+            args.config,
+            args.run_id,
+            allow_unmapped_override=True if args.allow_unmapped else None,
+        )
         print(normalized)
         return
 
@@ -141,6 +171,26 @@ def main() -> None:
         run_dir = _run_all(args.config)
         print(run_dir)
         return
+
+    if args.command == "track-b":
+        if args.track_b_command == "run":
+            if run_track_b_agent is None:
+                raise RuntimeError("Track B requires Agent package. Install: pip install -e Agent")
+            run_dir = run_track_b_agent(
+                coordbench_config=args.config,
+                baseline_run=args.baseline_run,
+                track_b_config=args.track_b_config,
+                repair_templates_yaml=args.repair_templates,
+                tag_map_yaml=args.tag_map,
+                provider=args.provider,
+                stub_diagnose=args.stub_diagnose,
+                diagnosis_max_output_tokens=args.diagnosis_max_output_tokens,
+                repair_round=args.repair_round,
+                sham_round=args.sham_round,
+            )
+            print(run_dir)
+            return
+        parser.error(f"Unknown track-b command: {args.track_b_command}")
 
     parser.error(f"Unknown command: {args.command}")
 

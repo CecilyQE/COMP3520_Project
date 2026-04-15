@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 
+import httpx
 from openai import OpenAI
 
 from coordbench.models import GenerationRequest, GenerationResponse, ProviderConfig
@@ -12,10 +13,20 @@ from coordbench.providers.base import BaseProvider
 class DeepSeekProvider(BaseProvider):
     def __init__(self, config: ProviderConfig) -> None:
         super().__init__("deepseek", config)
-        base_url = config.extra.get("base_url", "https://api.deepseek.com")
+        base_url = str(config.extra.get("base_url", "https://api.deepseek.com")).rstrip("/")
+        read_s = max(30.0, float(self.config.timeout_seconds))
+        timeout = httpx.Timeout(connect=30.0, read=read_s, write=read_s, pool=30.0)
+        # Must read YAML `trust_env` / DEEPSEEK_TRUST_ENV: default http_proxy often points at a dead proxy.
+        trust_env_raw = str(
+            config.extra.get("trust_env", os.environ.get("DEEPSEEK_TRUST_ENV", "true"))
+        ).strip().lower()
+        trust_env = trust_env_raw not in {"0", "false", "no", "off"}
+        self._http_client = httpx.Client(timeout=timeout, trust_env=trust_env)
         self.client = OpenAI(
             api_key=os.environ[self.config.api_key_env],
             base_url=base_url,
+            http_client=self._http_client,
+            max_retries=2,
         )
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
