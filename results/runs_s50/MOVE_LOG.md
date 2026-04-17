@@ -42,3 +42,10 @@ Moved completed 50-sample runs from the 2026-04-14 universal API full experiment
 
 - Both runs reached `raw_record_count=1500`.
 - `run_manifest.json` shows `normalization_completed=true` for both runs, but the outer `run-all` flow still raised because unresolved outputs remained.
+
+## 2026-04-18 additional mirrors
+- K2.6-code-preview_20260417T175310Z <- artifacts/full_experiments/20260418T015308Z_K2.6-code-preview_c15/K2.6-code-preview/runs/20260417T175310Z
+- mimo-v2-omni_20260417T175954Z <- artifacts/full_experiments/20260418T020021Z_mimo-v2-omni_c20/mimo-v2-omni/runs/20260417T175954Z
+- mimo-v2-pro_20260417T175955Z <- artifacts/full_experiments/20260418T020021Z_mimo-v2-pro_c20/mimo-v2-pro/runs/20260417T175955Z
+- MiniMax-M2.7-highspeed_20260417T175955Z <- artifacts/full_experiments/20260418T020021Z_MiniMax-M2.7-highspeed_c15/MiniMax-M2.7-highspeed/runs/20260417T175955Z
+- qwen3.6-plus_20260417T171417Z <- artifacts/full_experiments/20260418T011415Z_qwen3.6-plus_c5/qwen3.6-plus/runs/20260417T171417Z (resumed partial run; raw completed to 1500)
