@@ -1,0 +1,39 @@
+# OpenAI-compatible API (Zhipu GLM) for study2 s50 — matches runs like glm-4-flashx_*/raw_generations.jsonl (provider=openai).
+# Uses .env: GLM_API_KEY, GLM_BASE_URL, GLM_MODEL (e.g. glm-4-flashx-250414).
+providers:
+  openai:
+    enabled: true
+    # Must match the baseline run model id (see `results/runs_s50/glm-4-flashx_*`).
+    model: glm-4-flashx-250414
+    api_key_env: GLM_API_KEY
+    base_url: ${GLM_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
+    # Broken system proxy: match DeepSeek-style direct API behavior.
+    trust_env: false
+    concurrency: 5
+    max_retries: 10
+    timeout_seconds: 300
+    temperature: 1.0
+    max_output_tokens: 256
+
+sampling:
+  panel_id: study2_british_within
+  answer_language: English
+  prompt_languages: [en, zh]
+  round1_samples: 50
+  round2_samples: 10
+  enable_round2: true
+  round2_trigger: cross_lingual_top1_mismatch
+  random_seed: 20260324
+
+normalization:
+  alias_path: ../data/aliases/default_aliases.csv
+  allow_unmapped: false
+  fuzzy_match_threshold: 95
+
+analysis:
+  bootstrap_resamples: 1000
+  item_bootstrap_resamples: 1000
+
+outputs:
+  run_root: ${UNIVERSAL_RUN_ROOT:../artifacts/runs}
+  cache_root: ${UNIVERSAL_CACHE_ROOT:../artifacts/cache}

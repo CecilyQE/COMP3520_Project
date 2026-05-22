@@ -1,0 +1,5 @@
+model,item_id,prompt_language,raw_count,valid_count
+gpt-4o-mini,study2_item_02,en,10,10
+gpt-4o-mini,study2_item_02,zh,10,10
+gpt-4o-mini,study2_item_03,en,10,10
+gpt-4o-mini,study2_item_03,zh,10,10

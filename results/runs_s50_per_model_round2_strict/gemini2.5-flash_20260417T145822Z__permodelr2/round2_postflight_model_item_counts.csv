@@ -1,0 +1,7 @@
+model,item_id,prompt_language,raw_count,valid_count
+gemini-2.5-flash,study2_item_03,en,10,10
+gemini-2.5-flash,study2_item_03,zh,10,10
+gemini-2.5-flash,study2_item_11,en,10,10
+gemini-2.5-flash,study2_item_11,zh,10,10
+gemini-2.5-flash,study2_item_12,en,10,10
+gemini-2.5-flash,study2_item_12,zh,10,10

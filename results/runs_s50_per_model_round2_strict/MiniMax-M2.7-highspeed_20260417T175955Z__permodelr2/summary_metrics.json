@@ -1,0 +1,54 @@
+[
+  {
+    "metric_family": "cross_lingual",
+    "provider": "openai",
+    "model": "MiniMax-M2.7-highspeed",
+    "round_index": 1,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.04933134160104322,
+    "mean_tvd": 0.1,
+    "mean_top1_match": 0.8666666666666667,
+    "mean_flip_rate": 0.13333333333333333,
+    "mean_spearman": 0.6229673442094912,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7-highspeed",
+    "round_index": 1,
+    "prompt_language": "en",
+    "mean_jsd": 0.35300642809072935,
+    "mean_tvd": 0.4946666666666666,
+    "mean_top1_match": 0.8666666666666667,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.5098203053112293,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7-highspeed",
+    "round_index": 1,
+    "prompt_language": "zh",
+    "mean_jsd": 0.3442439467920206,
+    "mean_tvd": 0.5046666666666666,
+    "mean_top1_match": 0.7333333333333333,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.5103278633805035,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7-highspeed",
+    "round_index": 2,
+    "prompt_language": "en",
+    "mean_jsd": 0.28394742815759483,
+    "mean_tvd": 0.42,
+    "mean_top1_match": 1.0,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.5936253586889639,
+    "item_count": 2
+  }
+]

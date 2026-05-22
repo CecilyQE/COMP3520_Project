@@ -1,0 +1,14 @@
+.env
+.venv/
+.vscode/
+.pytest_cache/
+matplotlib-*/
+pytest-of-*/
+*.pyc
+__pycache__/
+artifacts/
+data/prepared/
+data/raw/
+data/cache/
+dist/
+build/

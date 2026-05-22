@@ -1,0 +1,5 @@
+model,item_id,prompt_language,raw_count,valid_count
+qwen3.6-plus,study2_item_09,en,20,10
+qwen3.6-plus,study2_item_09,zh,20,10
+qwen3.6-plus,study2_item_11,en,20,10
+qwen3.6-plus,study2_item_11,zh,20,10

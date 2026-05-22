@@ -1,0 +1,7 @@
+model,item_id,prompt_language,raw_count,valid_count
+glm-4-flashx-250414,study2_item_02,en,10,10
+glm-4-flashx-250414,study2_item_02,zh,10,10
+glm-4-flashx-250414,study2_item_03,en,10,10
+glm-4-flashx-250414,study2_item_03,zh,10,10
+glm-4-flashx-250414,study2_item_11,en,10,10
+glm-4-flashx-250414,study2_item_11,zh,10,10

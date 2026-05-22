@@ -1,0 +1,103 @@
+{
+  "title": "Run-50 Cross-lingual Coordination Results",
+  "source_csv": "D:\\comp3520\\COMP3520_Project\\results\\presentation_figures\\run50\\run50_model_summary.csv",
+  "panel_id": "study2_british_within",
+  "round1_samples_per_language": 50,
+  "prompt_languages": [
+    "en",
+    "zh"
+  ],
+  "answer_language": "English",
+  "metrics": {
+    "left_panel": "mean_jsd",
+    "left_panel_note": "lower is better",
+    "right_panel": "mean_top1_match",
+    "right_panel_note": "higher is better"
+  },
+  "models": [
+    {
+      "run_dir": "mimo-v2-pro_20260417T175955Z",
+      "label": "MiMo V2 Pro",
+      "mean_jsd": 0.0207258493308871,
+      "mean_top1_match": 1.0
+    },
+    {
+      "run_dir": "MiniMax-M2.7-highspeed_20260417T175955Z",
+      "label": "MiniMax M2.7 HighSpeed",
+      "mean_jsd": 0.0500992065228725,
+      "mean_top1_match": 0.8666666666666667
+    },
+    {
+      "run_dir": "mimo-v2-omni_20260417T175954Z",
+      "label": "MiMo V2 Omni",
+      "mean_jsd": 0.0502264169907666,
+      "mean_top1_match": 0.9333333333333332
+    },
+    {
+      "run_dir": "MiniMax-M2.7_20260414T105529Z",
+      "label": "MiniMax M2.7",
+      "mean_jsd": 0.0585981269497313,
+      "mean_top1_match": 0.9333333333333332
+    },
+    {
+      "run_dir": "qwen3.6-plus_20260417T171417Z",
+      "label": "Qwen 3.6 Plus",
+      "mean_jsd": 0.0629804691226376,
+      "mean_top1_match": 0.8666666666666667
+    },
+    {
+      "run_dir": "gpt-4o-mini_20260412T115957Z",
+      "label": "GPT-4o mini",
+      "mean_jsd": 0.0641933243153777,
+      "mean_top1_match": 0.8666666666666667
+    },
+    {
+      "run_dir": "K2.6-code-preview_20260417T175310Z",
+      "label": "K2.6 Code Preview",
+      "mean_jsd": 0.0703225187064564,
+      "mean_top1_match": 0.9333333333333332
+    },
+    {
+      "run_dir": "kimi-for-coding_20260414T162518Z",
+      "label": "Kimi for Coding",
+      "mean_jsd": 0.0891724467495412,
+      "mean_top1_match": 0.8666666666666667
+    },
+    {
+      "run_dir": "deepseek-v3_20260412T121754Z",
+      "label": "DeepSeek V3",
+      "mean_jsd": 0.089886739944271,
+      "mean_top1_match": 0.9333333333333332
+    },
+    {
+      "run_dir": "deepseek-v3.2_20260412T141541Z",
+      "label": "DeepSeek V3.2",
+      "mean_jsd": 0.0918139263856053,
+      "mean_top1_match": 0.9333333333333332
+    },
+    {
+      "run_dir": "gpt-5.4-mini_20260413T081755Z",
+      "label": "GPT-5.4 mini",
+      "mean_jsd": 0.113127668378946,
+      "mean_top1_match": 0.8
+    },
+    {
+      "run_dir": "glm-4-airx_20260417T164754Z",
+      "label": "GLM-4-AirX",
+      "mean_jsd": 0.1379240428812313,
+      "mean_top1_match": 0.8
+    },
+    {
+      "run_dir": "gpt-5.4_20260412T043325Z",
+      "label": "GPT-5.4",
+      "mean_jsd": 0.2022721687720212,
+      "mean_top1_match": 0.8
+    },
+    {
+      "run_dir": "glm-4-flashx-250414_20260417T162459Z",
+      "label": "GLM-4-FlashX",
+      "mean_jsd": 0.2134969854140225,
+      "mean_top1_match": 0.8
+    }
+  ]
+}

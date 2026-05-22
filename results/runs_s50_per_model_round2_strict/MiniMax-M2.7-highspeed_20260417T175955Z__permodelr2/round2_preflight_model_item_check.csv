@@ -1,0 +1,3 @@
+source_run,dest_run,round1_provider,round2_provider,round1_model,round2_model,item_id
+MiniMax-M2.7-highspeed_20260417T175955Z,MiniMax-M2.7-highspeed_20260417T175955Z__permodelr2,openai,openai,MiniMax-M2.7-highspeed,MiniMax-M2.7-highspeed,study2_item_09
+MiniMax-M2.7-highspeed_20260417T175955Z,MiniMax-M2.7-highspeed_20260417T175955Z__permodelr2,openai,openai,MiniMax-M2.7-highspeed,MiniMax-M2.7-highspeed,study2_item_11

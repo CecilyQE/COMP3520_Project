@@ -1,0 +1,4 @@
+source_run,dest_run,round1_provider,round2_provider,round1_model,round2_model,item_id
+gpt-5.4-mini_20260413T081755Z,gpt-5.4-mini_20260413T081755Z__permodelr2,openai,openai,gpt-5.4-mini,gpt-5.4-mini,study2_item_02
+gpt-5.4-mini_20260413T081755Z,gpt-5.4-mini_20260413T081755Z__permodelr2,openai,openai,gpt-5.4-mini,gpt-5.4-mini,study2_item_03
+gpt-5.4-mini_20260413T081755Z,gpt-5.4-mini_20260413T081755Z__permodelr2,openai,openai,gpt-5.4-mini,gpt-5.4-mini,study2_item_04

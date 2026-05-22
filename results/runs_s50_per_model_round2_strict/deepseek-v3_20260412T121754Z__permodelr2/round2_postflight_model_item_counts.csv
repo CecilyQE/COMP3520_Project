@@ -1,0 +1,3 @@
+model,item_id,prompt_language,raw_count,valid_count
+deepseek-chat,study2_item_03,en,10,10
+deepseek-chat,study2_item_03,zh,10,10

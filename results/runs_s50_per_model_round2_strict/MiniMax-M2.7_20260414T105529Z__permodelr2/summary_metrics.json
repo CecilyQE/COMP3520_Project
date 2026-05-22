@@ -1,0 +1,80 @@
+[
+  {
+    "metric_family": "cross_lingual",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 1,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.04485822155824708,
+    "mean_tvd": 0.09581737186600409,
+    "mean_top1_match": 0.9333333333333333,
+    "mean_flip_rate": 0.06666666666666667,
+    "mean_spearman": 0.662665055356745,
+    "item_count": 15
+  },
+  {
+    "metric_family": "cross_lingual",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 2,
+    "prompt_language": "en_vs_zh",
+    "mean_jsd": 0.05791426176250229,
+    "mean_tvd": 0.11111111111111113,
+    "mean_top1_match": 1.0,
+    "mean_flip_rate": 0.0,
+    "mean_spearman": null,
+    "item_count": 1
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 1,
+    "prompt_language": "en",
+    "mean_jsd": 0.3603070197651062,
+    "mean_tvd": 0.5027074829931972,
+    "mean_top1_match": 0.8,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.5241519047286191,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 1,
+    "prompt_language": "zh",
+    "mean_jsd": 0.3283619875684159,
+    "mean_tvd": 0.4846340200382754,
+    "mean_top1_match": 0.7333333333333333,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.5100039858289264,
+    "item_count": 15
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 2,
+    "prompt_language": "en",
+    "mean_jsd": 0.2653737423509377,
+    "mean_tvd": 0.44,
+    "mean_top1_match": 1.0,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.4952605565436486,
+    "item_count": 1
+  },
+  {
+    "metric_family": "human_alignment",
+    "provider": "openai",
+    "model": "MiniMax-M2.7",
+    "round_index": 2,
+    "prompt_language": "zh",
+    "mean_jsd": 0.15645136206590887,
+    "mean_tvd": 0.32888888888888884,
+    "mean_top1_match": 1.0,
+    "mean_flip_rate": NaN,
+    "mean_spearman": 0.6749263711465147,
+    "item_count": 1
+  }
+]

@@ -1,0 +1,2 @@
+source_run,dest_run,round1_provider,round2_provider,round1_model,round2_model,item_id
+MiniMax-M2.7_20260414T105529Z,MiniMax-M2.7_20260414T105529Z__permodelr2,openai,openai,MiniMax-M2.7,MiniMax-M2.7,study2_item_11

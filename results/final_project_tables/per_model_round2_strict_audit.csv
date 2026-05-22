@@ -1,0 +1,11 @@
+dest_run,round2_model,items,status,min_valid
+K2.6-code-preview_20260417T175310Z__permodelr2,K2.6-code-preview,study2_item_04,complete,10.0
+MiniMax-M2.7-highspeed_20260417T175955Z__permodelr2,MiniMax-M2.7-highspeed,"study2_item_09,study2_item_11",incomplete,1.0
+MiniMax-M2.7_20260414T105529Z__permodelr2,MiniMax-M2.7,study2_item_11,incomplete,5.0
+deepseek-v3.2_20260412T141541Z__permodelr2,deepseek-chat,study2_item_03,incomplete,0.0
+deepseek-v3_20260412T121754Z__permodelr2,deepseek-chat,study2_item_03,incomplete,0.0
+gemini2.5-flash_20260417T145822Z__permodelr2,gemini-2.5-flash,"study2_item_03,study2_item_11,study2_item_12",incomplete,0.0
+glm-4-airx_20260417T164754Z__permodelr2,glm-4-airx,"study2_item_03,study2_item_04,study2_item_05",incomplete,0.0
+glm-4-flashx-250414_20260417T162459Z__permodelr2,glm-4-flashx-250414,"study2_item_02,study2_item_03,study2_item_11",incomplete,0.0
+gpt-4o-mini_20260412T115957Z__permodelr2,gpt-4o-mini,"study2_item_02,study2_item_03",incomplete,0.0
+gpt-5.4-mini_20260413T081755Z__permodelr2,gpt-5.4-mini,"study2_item_02,study2_item_03,study2_item_04",no_postflight,

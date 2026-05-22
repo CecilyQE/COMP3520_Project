@@ -1,0 +1,15 @@
+count,item_id,response_clean,num_models,num_runs,models,runs
+15,study2_item_02,<empty>,2,2,MiniMax-M2.7;gemini-2.5-flash,MiniMax-M2.7_20260414T105529Z;gemini2.5-flash_20260417T145822Z
+15,study2_item_03,<empty>,2,2,MiniMax-M2.7;gemini-2.5-flash,MiniMax-M2.7_20260414T105529Z;gemini2.5-flash_20260417T145822Z
+9,study2_item_14,<empty>,2,2,K2.6-code-preview;gemini-2.5-flash,K2.6-code-preview_20260417T175310Z;gemini2.5-flash_20260417T145822Z
+8,study2_item_05,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+7,study2_item_09,<empty>,2,2,MiniMax-M2.7;gemini-2.5-flash,MiniMax-M2.7_20260414T105529Z;gemini2.5-flash_20260417T145822Z
+5,study2_item_04,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+4,study2_item_11,<empty>,2,2,K2.6-code-preview;gemini-2.5-flash,K2.6-code-preview_20260417T175310Z;gemini2.5-flash_20260417T145822Z
+3,study2_item_12,<empty>,2,2,K2.6-code-preview;gemini-2.5-flash,K2.6-code-preview_20260417T175310Z;gemini2.5-flash_20260417T145822Z
+3,study2_item_15,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+2,study2_item_01,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+2,study2_item_10,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+1,study2_item_06,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z
+1,study2_item_07,<empty>,1,1,K2.6-code-preview,K2.6-code-preview_20260417T175310Z
+1,study2_item_08,<empty>,1,1,gemini-2.5-flash,gemini2.5-flash_20260417T145822Z

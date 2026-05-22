@@ -1,0 +1,26 @@
+Baseline model,R2 provider,R2 model,Item,Item #,Consensus bucket,Human top1 p,R2 JSD,R2 TVD,R2 Top1 match,R2 Flip,R2 Spearman,EN succ,ZH succ
+K2.6-code-preview,anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0,0.0,1,0.0,,10.0,10.0
+MiniMax-M2.7-highspeed,anthropic,claude-opus-4-6,study2_item_09,9,medium,0.48,0.0,0.0,1,0.0,,10.0,10.0
+MiniMax-M2.7-highspeed,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.2364527976600279,0.4,1,0.0,,10.0,10.0
+MiniMax-M2.7,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.0143784604780786,0.0999999999999999,1,0.0,,10.0,10.0
+gemini-2.5-flash,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.0518991603213155,0.0999999999999999,1,0.0,,10.0,10.0
+gemini-2.5-flash,anthropic,claude-opus-4-6,study2_item_12,12,low,0.3,0.0,0.0,1,0.0,,10.0,10.0
+glm-4-airx,anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0518991603213155,0.0999999999999999,1,0.0,,10.0,10.0
+glm-4-airx,anthropic,claude-opus-4-6,study2_item_05,5,medium,0.64,0.0,0.0,1,0.0,,10.0,10.0
+glm-4-flashx-250414,anthropic,claude-opus-4-6,study2_item_02,2,low,0.3,0.0,0.0,1,0.0,,10.0,10.0
+glm-4-flashx-250414,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.1691948551010541,0.3,1,0.0,,10.0,10.0
+gpt-4o-mini,anthropic,claude-opus-4-6,study2_item_02,2,low,0.3,0.0,0.0,1,0.0,,10.0,10.0
+gpt-5.4-mini,anthropic,claude-opus-4-6,study2_item_02,2,low,0.3,0.0,0.0,1,0.0,,10.0,10.0
+gpt-5.4-mini,anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0,0.0,1,0.0,,10.0,10.0
+gpt-5.4 (main),anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0,0.0,1,0.0,,10.0,10.0
+gpt-5.4 (main),anthropic,claude-opus-4-6,study2_item_08,8,low,0.33,0.0518991603213155,0.0999999999999999,1,0.0,,10.0,10.0
+gpt-5.4 (main),anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.1691948551010541,0.3,1,0.0,,10.0,10.0
+gpt-5.4 (round2-upload),anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0,0.0,1,0.0,,10.0,10.0
+kimi-for-coding,anthropic,claude-opus-4-6,study2_item_09,9,medium,0.48,0.0,0.0,1,0.0,,10.0,10.0
+kimi-for-coding,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.2364527976600279,0.4,1,0.0,,10.0,10.0
+mimo-v2-omni,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.0143784604780786,0.0999999999999999,1,0.0,,10.0,10.0
+qwen3.5-plus,anthropic,claude-opus-4-6,study2_item_04,4,low,0.24,0.0518991603213155,0.0999999999999999,1,0.0,,10.0,10.0
+qwen3.5-plus,anthropic,claude-opus-4-6,study2_item_09,9,medium,0.48,0.0,0.0,1,0.0,,10.0,10.0
+qwen3.5-plus,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.1080315461456001,0.1999999999999999,1,0.0,,10.0,10.0
+qwen3.6-plus,anthropic,claude-opus-4-6,study2_item_09,9,medium,0.48,0.0,0.0,1,0.0,,10.0,10.0
+qwen3.6-plus,anthropic,claude-opus-4-6,study2_item_11,11,medium,0.56,0.2364527976600279,0.4,1,0.0,,10.0,10.0

@@ -1,0 +1,63 @@
+panel_id,item_id,canonical_answer,surface_forms,surface_form_count,notes
+study2_british_within,study2_item_01,**,**,1,auto-generated
+study2_british_within,study2_item_01,** London,** London,1,auto-generated
+study2_british_within,study2_item_01,London,London,1,auto-generated
+study2_british_within,study2_item_02,David Beckham,David Beckham,1,auto-generated
+study2_british_within,study2_item_02,davidbeckham,Dave Beckham | Beckham,2,manual_unresolved_merge_20260412_4omini | manual_global_merge_20260418_pass2
+study2_british_within,study2_item_02,marcusrashford,Rashford,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_02,messi,Lionel Messi,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_02,mofarah,Mo Farah,1,manual_global_merge_20260418_pass3
+study2_british_within,study2_item_02,rioferdinand,Ferdinand,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_02,ronaldo,Cristiano Ronaldo,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,**Joe Biden**,**Joe Biden**,1,auto-generated
+study2_british_within,study2_item_03,Joe Biden,Joe Biden,1,auto-generated
+study2_british_within,study2_item_03,Keir Starmer,Keir Starmer,1,auto-generated
+study2_british_within,study2_item_03,borisjohnson,Johnson,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,donaldtrump,Trump,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,joebiden,Biden,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,kingcharles,King Charles III,1,manual_global_merge_20260418
+study2_british_within,study2_item_03,putin,Vladimir Putin,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,rishisunak,Sunak,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_03,winstonchurchill,Churchill,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,Big Ben,"Big Ben, Elizabeth Tower",1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,Buckingham Palace,Buckingham Palace | **Buckingham Palace**,2,auto-generated
+study2_british_within,study2_item_04,britishmuseum,The British Museum,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,eiffeltower,The Eiffel Tower,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,house,house,1,manual_global_merge_20260418_pass3
+study2_british_within,study2_item_04,housesofparliament,The Houses of Parliament,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,londoneye,The London Eye,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_04,shard,The Shard,1,manual_unresolved_merge_20260412_4omini
+study2_british_within,study2_item_04,towerbridge,Tower Bridge,1,manual_global_merge_20260418_pass3
+study2_british_within,study2_item_04,toweroflondon,The Tower of London,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_05,**,**,1,auto-generated
+study2_british_within,study2_item_05,Ben Nevis,Ben Nevis,1,auto-generated
+study2_british_within,study2_item_05,Ben Nevis.cw,Ben Nevis.cw,1,auto-generated
+study2_british_within,study2_item_05,Mount Everest.*,Mount Everest.*,1,auto-generated
+study2_british_within,study2_item_05,scafeldpike,Scafell Pike,1,manual_unresolved_merge_20260412_4omini
+study2_british_within,study2_item_05,snowdonia,Snowdon | Mount Snowdon,2,manual_unresolved_merge_20260412_4omini | manual_unresolved_merge_20260412_deepseekv3
+study2_british_within,study2_item_06,Fish and chips,Fish and chips | Fish and Chips,2,auto-generated
+study2_british_within,study2_item_06,sausageandmash,Bangers and Mash,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_07,**,**,1,auto-generated
+study2_british_within,study2_item_07,Big Ben,Big Ben,1,auto-generated
+study2_british_within,study2_item_08,**,**,1,auto-generated
+study2_british_within,study2_item_08,Ed Sheeran,Ed Sheeran,1,auto-generated
+study2_british_within,study2_item_08,Elton John,Elton John,1,auto-generated
+study2_british_within,study2_item_08,elvis,Elvis Presley,1,manual_unresolved_merge_20260412
+study2_british_within,study2_item_09,1984bygeorgeorwell,1984,1,manual_unresolved_merge_20260412_4omini
+study2_british_within,study2_item_09,Harry Potter,Harry Potter,1,auto-generated
+study2_british_within,study2_item_09,harrypotter,Harry Potter and the Philosopher's Stone | Harry Potter and the Philosopher's Stone by J.K. Rowling | **Harry Potter and the Philosopher's Stone** by J.K. Rowling,3,manual_unresolved_merge_20260412 | manual_global_merge_20260418_pass2 | manual_global_merge_20260418_pass3
+study2_british_within,study2_item_10,* BBC.cw,* BBC.cw,1,auto-generated
+study2_british_within,study2_item_10,**,**,1,auto-generated
+study2_british_within,study2_item_10,BBC,BBC,1,auto-generated
+study2_british_within,study2_item_11,**,**,1,auto-generated
+study2_british_within,study2_item_11,London,London,1,auto-generated
+study2_british_within,study2_item_12,**,**,1,auto-generated
+study2_british_within,study2_item_12,Margaret Thatcher,Margaret Thatcher,1,auto-generated
+study2_british_within,study2_item_12,margaretthatcher,Thatcher,1,manual_global_merge_20260418
+study2_british_within,study2_item_12,queenelizabeth,Queen Elizabeth II,1,manual_unresolved_merge_20260412
+study2_british_within,study2_item_13,dollar,US dollar,1,manual_global_merge_20260418_pass2
+study2_british_within,study2_item_13,pound,Pound | British Pound | Pound sterling | Pound Sterling | British Pound (GBP) | Pound (GBP) | British Pound Sterling | Pound Sterling (GBP) | The pound | The pound (sterling) | Pounds | The British Pound | **British Pound (GBP)**,13,manual_semantic_merge_20260420 | manual_unresolved_merge_20260412 | manual_global_merge_20260418 | manual_global_merge_20260418_pass2 | manual_global_merge_20260418_pass3
+study2_british_within,study2_item_14,**,**,1,auto-generated
+study2_british_within,study2_item_14,Rose,Rose,1,auto-generated
+study2_british_within,study2_item_15,**,**,1,auto-generated
+study2_british_within,study2_item_15,Football.cw,Football.cw,1,auto-generated

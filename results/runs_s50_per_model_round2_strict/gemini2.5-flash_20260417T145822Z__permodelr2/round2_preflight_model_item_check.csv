@@ -1,0 +1,4 @@
+source_run,dest_run,round1_provider,round2_provider,round1_model,round2_model,item_id
+gemini2.5-flash_20260417T145822Z,gemini2.5-flash_20260417T145822Z__permodelr2,gemini,gemini,gemini-2.5-flash,gemini-2.5-flash,study2_item_03
+gemini2.5-flash_20260417T145822Z,gemini2.5-flash_20260417T145822Z__permodelr2,gemini,gemini,gemini-2.5-flash,gemini-2.5-flash,study2_item_11
+gemini2.5-flash_20260417T145822Z,gemini2.5-flash_20260417T145822Z__permodelr2,gemini,gemini,gemini-2.5-flash,gemini-2.5-flash,study2_item_12

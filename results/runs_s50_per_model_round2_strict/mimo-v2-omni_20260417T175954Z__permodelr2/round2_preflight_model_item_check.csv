@@ -1,0 +1,2 @@
+source_run,dest_run,round1_provider,round2_provider,round1_model,round2_model,item_id
+mimo-v2-omni_20260417T175954Z,mimo-v2-omni_20260417T175954Z__permodelr2,openai,openai,mimo-v2-omni,mimo-v2-omni,study2_item_11

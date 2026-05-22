@@ -1,0 +1,3 @@
+model,item_id,prompt_language,raw_count,valid_count
+mimo-v2-omni,study2_item_11,en,10,10
+mimo-v2-omni,study2_item_11,zh,10,9
